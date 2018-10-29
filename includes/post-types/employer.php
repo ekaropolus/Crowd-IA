@@ -200,11 +200,12 @@ if (!class_exists('post_type_employer')) {
             $new_columns['status'] = force_balance_tags('<strong class="jobsearch-tooltip" title="' . esc_html__('Status', 'wp-jobsearch') . '"><i class="dashicons dashicons-info"></i></strong>');
             $new_columns['action'] = esc_html__('Action', 'wp-jobsearch');
             //return array_merge($columns, $new_columns);
-            return $new_columns;
+            return apply_filters('jobsearch_emp_post_bk_admin_columns', $new_columns);
         }
 
         public function jobsearch_employer_columns($column) {
             global $post;
+            $_post_id = $post->ID;
             switch ($column) {
                 case 'employer_title' :
                     echo '<div class="employer_position">';
@@ -313,6 +314,8 @@ if (!class_exists('post_type_employer')) {
                     echo '</div>';
                     break;
             }
+            
+            echo apply_filters('jobsearch_emp_post_bk_admin_columns_val', '', $column, $_post_id);
         }
 
         public function jobsearch_primary_column($column, $screen) {

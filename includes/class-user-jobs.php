@@ -597,6 +597,8 @@ class Jobsearch_User_Job_Functions {
 
         $_package_fields = apply_filters('jobsearch_set_package_fields_ch_list', $_package_fields, $pkg_type);
 
+        $order_user_id = get_post_meta($order_id, 'jobsearch_order_user', true);
+        
         $packge_fields_arr = array(
             'package_name' => get_the_title($package_id),
             'package_type' => get_post_meta($package_id, 'jobsearch_field_package_type', true),
@@ -618,11 +620,46 @@ class Jobsearch_User_Job_Functions {
         if (isset($packge_fields_arr['package_expiry_time']) && $packge_fields_arr['package_expiry_time'] > 0 && isset($packge_fields_arr['package_expiry_time_unit'])) {
             $pkg_expiry = $packge_fields_arr['package_expiry_time'];
             $pkg_expiry_unit = $packge_fields_arr['package_expiry_time_unit'];
-            $pkg_expiry_time = strtotime("+" . $pkg_expiry . " " . $pkg_expiry_unit, strtotime(current_time('d-m-Y H:i:s', 1)));
+            $pkg_expiry_time = strtotime("+" . $pkg_expiry . " " . $pkg_expiry_unit, strtotime(current_time('d-m-Y H:i:s')));
         } else {
-            $pkg_expiry_time = strtotime(current_time('d-m-Y H:i:s', 1));
+            $pkg_expiry_time = strtotime(current_time('d-m-Y H:i:s'));
         }
         $packge_fields_arr['package_expiry_timestamp'] = $pkg_expiry_time;
+        
+        if (class_exists('WC_Subscription')) {
+            if (isset($packge_fields_arr['package_expiry_time']) && isset($packge_fields_arr['package_expiry_time_unit'])) {
+                $ordr_subscription_id = JobSearch_WC_Subscription::order_subscription($order_id, $order_user_id);
+                $subscription_obj = new WC_Subscription($ordr_subscription_id);
+                // date_paid
+                // last_order_date_created
+                // last_order_date_paid
+                $subs_last_paydate = $subscription_obj->get_date('last_order_date_created');
+                $subs_next_paydate = $subscription_obj->get_date('next_payment');
+                //
+                if ($subs_last_paydate != '' && $subs_next_paydate != '') {
+                    $subs_next_paydate = strtotime($subs_next_paydate);
+                    $subs_last_paydate = strtotime($subs_last_paydate);
+                    if ($subs_next_paydate > $subs_last_paydate) {
+                        $days_between_pay = ceil(abs($subs_next_paydate - $subs_last_paydate) / 86400);
+                        $packge_fields_arr['package_expiry_time'] = $days_between_pay;
+                        $packge_fields_arr['package_expiry_time_unit'] = 'days';
+                        
+                        //
+                        $pkg_expiry_time = strtotime("+" . $days_between_pay . " days", strtotime(current_time('d-m-Y H:i:s')));
+                        $packge_fields_arr['package_expiry_timestamp'] = $pkg_expiry_time;
+                    }
+                }
+                if ($pkg_type == 'cv') {
+                    $packge_fields_arr['jobsearch_order_cvs_list'] = '';
+                } else if ($pkg_type == 'job') {
+                    $packge_fields_arr['jobsearch_order_jobs_list'] = '';
+                } else if ($pkg_type == 'featured_jobs') {
+                    $packge_fields_arr['jobsearch_order_featc_list'] = '';
+                } else if ($pkg_type == 'candidate') {
+                    $packge_fields_arr['jobsearch_order_apps_list'] = '';
+                }
+            }
+        }
 
         //
         $packge_fields_arr = apply_filters('jobsearch_package_fields_arr_before_order_set', $packge_fields_arr, $order_id, $package_id, $pkg_type);

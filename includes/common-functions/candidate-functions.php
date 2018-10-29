@@ -44,7 +44,7 @@ function jobsearch_get_candidate_salary_format($candidate_id = 0, $price = 0, $c
         $ret_price = jobsearch_get_price_format($price);
     } else {
         $price = $price > 0 ? trim($price) : 0;
-        $price = preg_replace("/[^0-9,.]+/iu", "", $price);
+        $price = preg_replace("/[^0-9.]+/iu", "", $price);
         if ($cur_pos == 'left_space') {
             $ret_price = ($cur_tag != '' ? '<' . $cur_tag . '>' : '') . $candidate_currency . ' ' . ($cur_tag != '' ? '</' . $cur_tag . '>' : '') . number_format($price, $candidate_salary_deci, ".", $candidate_salary_sep);
         } else if ($cur_pos == 'right') {
@@ -231,7 +231,6 @@ if (!function_exists('jobsearch_get_candidate_item_count')) {
         if ($left_filter_count_switch == 'yes') {
             global $jobsearch_shortcode_candidates_frontend;
 
-
             // get all arguments from getting flters
             $left_filter_arr = array();
             $left_filter_arr = $jobsearch_shortcode_candidates_frontend->get_filter_arg($candidate_short_counter, $field_meta_key);
@@ -259,6 +258,8 @@ if (!function_exists('jobsearch_get_candidate_item_count')) {
             if (!empty($all_post_ids)) {
                 $args['post__in'] = $all_post_ids;
             }
+            
+            $args = apply_filters('jobsearch_candidates_listing_filter_args', $args);
 
             $restaurant_loop_obj = jobsearch_get_cached_obj('candidate_result_cached_loop_count_obj', $args, 12, false, 'wp_query');
             $restaurant_totnum = $restaurant_loop_obj->found_posts;
@@ -381,7 +382,7 @@ if (!function_exists('jobsearch_candidate_skill_percent_count')) {
                         $skills_perc += ($def_percentage > 0 ? $def_percentage : 0);
                     } else {
                         if ($def_percentage > 0) {
-                            $msgs_array[] = sprintf(__('<small>%s</small> Skills increased by Full Name.', 'wp-jobsearch'), $def_percentage . '%');
+                            $msgs_array[] = sprintf(__('<small> %s </small> Skills increased by Full Name.', 'wp-jobsearch'), $def_percentage . '%');
                         }
                     }
                 }
@@ -393,7 +394,7 @@ if (!function_exists('jobsearch_candidate_skill_percent_count')) {
                         $skills_perc += ($def_percentage > 0 ? $def_percentage : 0);
                     } else {
                         if ($def_percentage > 0) {
-                            $msgs_array[] = sprintf(__('<small>%s</small> Skills increased by Profile Image.', 'wp-jobsearch'), $def_percentage . '%');
+                            $msgs_array[] = sprintf(__('<small> %s </small> Skills increased by Profile Image.', 'wp-jobsearch'), $def_percentage . '%');
                         }
                     }
                 }
@@ -405,7 +406,7 @@ if (!function_exists('jobsearch_candidate_skill_percent_count')) {
                         $skills_perc += ($def_percentage > 0 ? $def_percentage : 0);
                     } else {
                         if ($def_percentage > 0) {
-                            $msgs_array[] = sprintf(__('<small>%s</small> Skills increased by Job Title.', 'wp-jobsearch'), $def_percentage . '%');
+                            $msgs_array[] = sprintf(__('<small> %s </small> Skills increased by Job Title.', 'wp-jobsearch'), $def_percentage . '%');
                         }
                     }
                 }
@@ -417,7 +418,7 @@ if (!function_exists('jobsearch_candidate_skill_percent_count')) {
                         $skills_perc += ($def_percentage > 0 ? $def_percentage : 0);
                     } else {
                         if ($def_percentage > 0) {
-                            $msgs_array[] = sprintf(__('<small>%s</small> Skills increased by Salary.', 'wp-jobsearch'), $def_percentage . '%');
+                            $msgs_array[] = sprintf(__('<small> %s </small> Skills increased by Salary.', 'wp-jobsearch'), $def_percentage . '%');
                         }
                     }
                 }
@@ -429,7 +430,7 @@ if (!function_exists('jobsearch_candidate_skill_percent_count')) {
                         $skills_perc += ($def_percentage > 0 ? $def_percentage : 0);
                     } else {
                         if ($def_percentage > 0) {
-                            $msgs_array[] = sprintf(__('<small>%s</small> Skills increased by Sector.', 'wp-jobsearch'), $def_percentage . '%');
+                            $msgs_array[] = sprintf(__('<small> %s </small> Skills increased by Sector.', 'wp-jobsearch'), $def_percentage . '%');
                         }
                     }
                 }
@@ -442,7 +443,7 @@ if (!function_exists('jobsearch_candidate_skill_percent_count')) {
                         $skills_perc += ($def_percentage > 0 ? $def_percentage : 0);
                     } else {
                         if ($def_percentage > 0) {
-                            $msgs_array[] = sprintf(__('<small>%s</small> Skills increased by Description.', 'wp-jobsearch'), $def_percentage . '%');
+                            $msgs_array[] = sprintf(__('<small> %s </small> Skills increased by Description.', 'wp-jobsearch'), $def_percentage . '%');
                         }
                     }
                 }
@@ -458,7 +459,7 @@ if (!function_exists('jobsearch_candidate_skill_percent_count')) {
                                 $skills_perc += ($def_percentage > 0 ? $def_percentage : 0);
                             } else {
                                 if ($def_percentage > 0) {
-                                    $msgs_array[] = sprintf(__('<small>%s</small> Skills increased by %s.', 'wp-jobsearch'), $def_percentage . '%', $skill_social_val['name']);
+                                    $msgs_array[] = sprintf(__('<small> %s </small> Skills increased by %s.', 'wp-jobsearch'), $def_percentage . '%', $skill_social_val['name']);
                                 }
                             }
                         }
@@ -477,7 +478,7 @@ if (!function_exists('jobsearch_candidate_skill_percent_count')) {
                                     $skills_perc += ($def_percentage > 0 ? $def_percentage : 0);
                                 } else {
                                     if ($def_percentage > 0) {
-                                        $msgs_array[] = sprintf(__('<small>%s</small> Skills increased by %s.', 'wp-jobsearch'), $def_percentage . '%', $skill_contact_val['name']);
+                                        $msgs_array[] = sprintf(__('<small> %s </small> Skills increased by %s.', 'wp-jobsearch'), $def_percentage . '%', $skill_contact_val['name']);
                                     }
                                 }
                             } else {
@@ -486,7 +487,7 @@ if (!function_exists('jobsearch_candidate_skill_percent_count')) {
                                     $skills_perc += ($def_percentage > 0 ? $def_percentage : 0);
                                 } else {
                                     if ($def_percentage > 0) {
-                                        $msgs_array[] = sprintf(__('<small>%s</small> Skills increased by %s.', 'wp-jobsearch'), $def_percentage . '%', $skill_contact_val['name']);
+                                        $msgs_array[] = sprintf(__('<small> %s </small> Skills increased by %s.', 'wp-jobsearch'), $def_percentage . '%', $skill_contact_val['name']);
                                     }
                                 }
                             }
@@ -505,7 +506,7 @@ if (!function_exists('jobsearch_candidate_skill_percent_count')) {
                                 $skills_perc += ($def_percentage > 0 ? $def_percentage : 0);
                             } else {
                                 if ($def_percentage > 0) {
-                                    $msgs_array[] = sprintf(__('<small>%s</small> Skills increased by %s.', 'wp-jobsearch'), $def_percentage . '%', $skill_resume_val['name']);
+                                    $msgs_array[] = sprintf(__('<small> %s </small> Skills increased by %s.', 'wp-jobsearch'), $def_percentage . '%', $skill_resume_val['name']);
                                 }
                             }
                         }
@@ -527,7 +528,7 @@ if (!function_exists('jobsearch_candidate_skill_percent_count')) {
                                     $skills_perc += ($def_percentage > 0 ? $def_percentage : 0);
                                 } else {
                                     if ($def_percentage > 0) {
-                                        $msgs_array[] = sprintf(__('<small>%s</small> Skills increased by CV.', 'wp-jobsearch'), $def_percentage . '%');
+                                        $msgs_array[] = sprintf(__('<small> %s </small> Skills increased by CV.', 'wp-jobsearch'), $def_percentage . '%');
                                     }
                                 }
                             }
@@ -537,7 +538,7 @@ if (!function_exists('jobsearch_candidate_skill_percent_count')) {
                                     $skills_perc += ($def_percentage > 0 ? $def_percentage : 0);
                                 } else {
                                     if ($def_percentage > 0) {
-                                        $msgs_array[] = sprintf(__('<small>%s</small> Skills increased by Cover Letter.', 'wp-jobsearch'), $def_percentage . '%');
+                                        $msgs_array[] = sprintf(__('<small> %s </small> Skills increased by Cover Letter.', 'wp-jobsearch'), $def_percentage . '%');
                                     }
                                 }
                             }
@@ -561,7 +562,7 @@ if (!function_exists('jobsearch_candidate_skill_percent_count')) {
                                     $skills_perc += ($def_percentage > 0 ? $def_percentage : 0);
                                 } else {
                                     if ($def_percentage > 0) {
-                                        $msgs_array[] = sprintf(__('<small>%s</small> Skills increased by %s.', 'wp-jobsearch'), $def_percentage . '%', $custom_field_name);
+                                        $msgs_array[] = sprintf(__('<small> %s </small> Skills increased by %s.', 'wp-jobsearch'), $def_percentage . '%', $custom_field_name);
                                     }
                                 }
                             }

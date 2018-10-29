@@ -2203,6 +2203,14 @@ if (!function_exists('jobsearch_get_taxanomy_type_item_count')) {
                 'terms' => $field_meta_key
             );
 
+            if (isset($args_filters['post_type']) && $args_filters['post_type'] == 'candidate') {
+                $args_filters = apply_filters('jobsearch_candidates_listing_filter_args', $args_filters);
+            }
+
+            if (isset($args_filters['post_type']) && $args_filters['post_type'] == 'employer') {
+                $args_filters = apply_filters('jobsearch_employers_listing_filter_args', $args_filters);
+            }
+
             if (isset($args_filters['post_type']) && $args_filters['post_type'] == 'job') {
                 $args_filters = apply_filters('jobsearch_jobs_listing_filter_args', $args_filters);
                 //echo '<pre>';
@@ -2348,21 +2356,30 @@ if (!function_exists('jobsearch_get_item_count')) {
                 }
             }
 
+            $all_post_ids = $post_ids;
+            if (!empty($all_post_ids)) {
+                $args['post__in'] = $all_post_ids;
+            }
+
             if ($post_type == 'job') {
                 $args = apply_filters('jobsearch_jobs_listing_filter_args', $args);
             }
 
-            if (isset($_REQUEST['location']) && $_REQUEST['location'] != '' && !isset($_REQUEST['loc_polygon_path'])) {
+            if ($post_type == 'candidate') {
+                $args = apply_filters('jobsearch_candidates_listing_filter_args', $args);
+            }
+
+            if ($post_type == 'employer') {
+                $args = apply_filters('jobsearch_employers_listing_filter_args', $args);
+            }
+
+            if (isset($_REQUEST['location']) && $_REQUEST['location'] != '' && !isset($_REQUEST['loc_polygon_path']) && $post_type == 'job') {
                 $radius = isset($_REQUEST['radius']) ? $_REQUEST['radius'] : '';
                 $post_ids = $jobsearch_shortcode_jobs_frontend->job_location_filter($post_ids);
                 if (empty($post_ids)) {
                     $post_ids = array(0);
                 }
-            }
-
-            $all_post_ids = $post_ids;
-            if (!empty($all_post_ids)) {
-                $args['post__in'] = $all_post_ids;
+                $args['post__in'] = $post_ids;
             }
 
             $jobs_loop_obj = jobsearch_get_cached_obj('job_result_cached_loop_count_obj', $args, 12, false, 'wp_query');
@@ -2796,12 +2813,12 @@ function jobsearch_get_currency_symbol() {
 
 function jobsearch_get_price_format($price = 0, $cur_tag = '') {
 
+    $price = preg_replace("/[^0-9.]+/iu", "", $price);
     $price = $price > 0 ? $price : 0;
     if (function_exists('wc_price')) {
         $ret_price = wc_price($price);
         $ret_price = wp_kses($ret_price, array());
     } else {
-        $price = preg_replace("/[^0-9,.]+/iu", "", $price);
         $ret_price = ($cur_tag != '' ? '<' . $cur_tag . '>' : '') . jobsearch_get_currency_symbol() . ($cur_tag != '' ? '</' . $cur_tag . '>' : '') . number_format($price, 2, ".", ",");
     }
 
@@ -2822,7 +2839,7 @@ function jobsearch_get_duration_unit_str($dur = '') {
     return $str;
 }
 
-function jobsearch_google_map_with_directions($post_id = '') {
+function jobsearch_google_map_with_directions($post_id = '',$map_height = '407') {
     global $jobsearch_plugin_options;
     $cnt_counter = rand(1000000, 99999999);
     $map_address = get_post_meta($post_id, 'jobsearch_field_location_address', true);
@@ -2834,7 +2851,7 @@ function jobsearch_google_map_with_directions($post_id = '') {
 
     if ($map_latitude != '' && $map_longitude != '' && $map_zoom > 0) {
 
-        $map_height = '407';
+        
         wp_enqueue_script('jobsearch-google-map');
         ?>
         <div class="jobsearch-map">
@@ -3063,6 +3080,8 @@ if (!function_exists('jobsearch_user_profile_before')) {
                 if (!in_array($id, $viewed_candidates)) {
                     $viewed_candidates[] = $id;
                     update_post_meta($job_id, 'jobsearch_viewed_candidates', $viewed_candidates);
+                    
+                    do_action('jobsearch_after_cand_preview_as_applicant', $id, $employer_id);
                 }
             }
         }
@@ -4111,4 +4130,71 @@ function jobsearch_admin_assign_packge_to_user() {
 
     echo json_encode(array('success' => '0', 'msg' => 'Package assign fail.'));
     die;
+}
+
+// Menu functions
+add_action('careerfy_mega_menu_cus_items_before', 'jobsearch_mega_menu_cus_items_before', 10, 2);
+
+function jobsearch_mega_menu_cus_items_before($item, $item_id) {
+    ?>
+    <p class="field-view description description-wide">
+        <label for="edit-menu-item-visifor-<?php echo absint($item_id); ?>">
+            <?php _e('Visible for', 'wp-jobsearch'); ?><br />
+            <select id="edit-menu-item-visifor-<?php echo absint($item_id); ?>" class="widefat edit-menu-item-visifor" name="menu-item-visifor[<?php echo absint($item_id); ?>]">
+                <option<?php echo esc_attr($item->visifor) == 'all' ? ' selected="selected"' : '' ?> value="all"><?php _e('For All', 'wp-jobsearch'); ?></option>
+                <option<?php echo esc_attr($item->visifor) == 'candidate' ? ' selected="selected"' : '' ?> value="candidate"><?php _e('For Candidates', 'wp-jobsearch'); ?></option>
+                <option<?php echo esc_attr($item->visifor) == 'employer' ? ' selected="selected"' : '' ?> value="employer"><?php _e('For Employers', 'wp-jobsearch'); ?></option>
+            </select>
+        </label>
+    </p>
+    <?php
+}
+
+add_filter('careerfy_mega_add_custom_nav_fields_filtr', 'jobsearch_mega_add_custom_nav_fields_filtr', 10, 1);
+
+function jobsearch_mega_add_custom_nav_fields_filtr($menu_item) {
+    $menu_item->visifor = get_post_meta($menu_item->ID, '_menu_item_visifor', true);
+    return $menu_item;
+}
+
+add_action('careerfy_mega_menu_items_save', 'jobsearch_mega_menu_items_save', 10, 1);
+
+function jobsearch_mega_menu_items_save($menu_item_db_id) {
+    if (isset($_REQUEST['menu-item-visifor'][$menu_item_db_id])) {
+        $item_value = $_REQUEST['menu-item-visifor'][$menu_item_db_id];
+    } else {
+        $item_value = 'all';
+    }
+
+    update_post_meta($menu_item_db_id, '_menu_item_visifor', $item_value);
+}
+
+add_filter('walker_nav_menu_start_el', 'jobsearch_walker_nav_menu_start_el', 10, 5);
+
+function jobsearch_walker_nav_menu_start_el($item_output, $item, $depth = 0, $args = array(), $id = '') {
+    $item_id = isset($item->ID) ? $item->ID : '';
+    $visifor = get_post_meta($item_id, '_menu_item_visifor', true);
+
+    if ($visifor != '' && in_array($visifor, array('candidate', 'employer'))) {
+        $view_item = false;
+
+        if (is_user_logged_in()) {
+            $cur_user_id = get_current_user_id();
+            $cur_user_obj = wp_get_current_user();
+            $employer_id = jobsearch_get_user_employer_id($cur_user_id);
+            $candidate_id = jobsearch_get_user_candidate_id($cur_user_id);
+            if ($candidate_id > 0 && !in_array('administrator', (array) $cur_user_obj->roles) && $visifor == 'candidate') {
+                $view_item = true;
+            } else if ($employer_id > 0 && !in_array('administrator', (array) $cur_user_obj->roles) && $visifor == 'employer') {
+                $view_item = true;
+            } else if (in_array('administrator', (array) $cur_user_obj->roles)) {
+                $view_item = true;
+            }
+        }
+        if (!$view_item) {
+            $item_output = '';
+        }
+    }
+    
+    return $item_output;
 }

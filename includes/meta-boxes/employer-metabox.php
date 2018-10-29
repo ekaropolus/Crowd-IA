@@ -300,6 +300,7 @@ function jobsearch_employers_meta_settings() {
             ?>
         </div>
         <?php
+        echo apply_filters('jobsearch_emp_bk_meta_fields_after_photo_gal', '', $_post_id);
         //
         $security_questions = isset($jobsearch_plugin_options['jobsearch-security-questions']) ? $jobsearch_plugin_options['jobsearch-security-questions'] : '';
         if (!empty($security_questions) && sizeof($security_questions) >= 3) {
@@ -539,6 +540,42 @@ function jobsearch_employers_meta_settings() {
                 <a href="javascript:void(0);" data-uid="<?php echo ($employer_user_id) ?>" data-id="<?php echo ($firts_pkg_id) ?>" class="button button-primary button-large admin-packge-asignbtn"><?php esc_html_e('Assign new package to this User', 'wp-jobsearch') ?></a>
                 <span class="assign-loder"></span>
             </div>
+            <script>
+                jQuery(document).on('change', '#jobsearch-assign-pck-slect', function () {
+                    jQuery('.admin-packge-asignbtn').attr('data-id', jQuery(this).val());
+                });
+                jQuery(document).on('click', '.admin-packge-asignbtn', function () {
+
+                    var loader_con = jQuery(this).parent('.packge-asignbtn-holder').find('.assign-loder');
+
+                    var pkg_id = jQuery(this).attr('data-id');
+                    var user_id = jQuery(this).attr('data-uid');
+
+                    loader_con.html('<i class="fa fa-refresh fa-spin"></i>');
+                    var request = $.ajax({
+                        url: '<?php echo admin_url('admin-ajax.php') ?>',
+                        method: "POST",
+                        data: {
+                            'user_id': user_id,
+                            'pkg_id': pkg_id,
+                            'action': 'jobsearch_admin_assign_packge_to_user'
+                        },
+                        dataType: "json"
+                    });
+                    request.done(function (response) {
+                        loader_con.html('');
+                        if (typeof response.success !== 'undefined' && response.success == '1') {
+                            loader_con.html(response.msg);
+                        } else if (typeof response.msg !== 'undefined' && response.msg != '') {
+                            loader_con.html(response.msg);
+                        }
+                    });
+
+                    request.fail(function (jqXHR, textStatus) {
+                        loader_con.html('');
+                    });
+                });
+            </script>
             <?php
         }
 
@@ -570,40 +607,6 @@ function jobsearch_employers_meta_settings() {
 
         if ($pkgs_query->have_posts()) {
             ?>
-            <script>
-                jQuery(document).on('change', '#jobsearch-assign-pck-slect', function () {
-                    jQuery('.admin-packge-asignbtn').attr('data-id', jQuery(this).val());
-                });
-                jQuery(document).on('click', '.admin-packge-asignbtn', function () {
-
-                    var loader_con = jQuery(this).parent('.packge-asignbtn-holder').find('.assign-loder');
-
-                    var pkg_id = jQuery(this).attr('data-id');
-                    var user_id = jQuery(this).attr('data-uid');
-
-                    loader_con.html('<i class="fa fa-refresh fa-spin"></i>');
-                    var request = $.ajax({
-                        url: '<?php echo admin_url('admin-ajax.php') ?>',
-                        method: "POST",
-                        data: {
-                            'user_id': user_id,
-                            'pkg_id': pkg_id,
-                            'action': 'jobsearch_admin_assign_packge_to_user'
-                        },
-                        dataType: "json"
-                    });
-                    request.done(function (response) {
-                        loader_con.html('');
-                        if (typeof response.success !== 'undefined' && response.success == '1') {
-                            loader_con.html(response.msg);
-                        }
-                    });
-
-                    request.fail(function (jqXHR, textStatus) {
-                        loader_con.html('');
-                    });
-                });
-            </script>
 
             <div class="jobsearch-jobs-list-holder">
                 <div class="jobsearch-managejobs-list">

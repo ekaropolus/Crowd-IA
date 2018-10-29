@@ -67,7 +67,7 @@ class JobSearch_plugin {
 
     public function __construct() {
 
-        self::$version = '1.2.5';
+        self::$version = '1.2.6';
 
         $this->set_locale();
         do_action('jobsearch_trigger_hook_after_locale');
@@ -110,6 +110,7 @@ class JobSearch_plugin {
         include plugin_dir_path(dirname(__FILE__)) . 'includes/class-form-fields.php';
         // common functions file
         include plugin_dir_path(dirname(__FILE__)) . 'includes/common-functions/common-functions.php';
+        include plugin_dir_path(dirname(__FILE__)) . 'includes/classes/class-wc-subscriptions.php';
         include plugin_dir_path(dirname(__FILE__)) . 'includes/common-functions/job-functions.php';
         include plugin_dir_path(dirname(__FILE__)) . 'includes/common-functions/employer-functions.php';
         include plugin_dir_path(dirname(__FILE__)) . 'includes/common-functions/candidate-functions.php';

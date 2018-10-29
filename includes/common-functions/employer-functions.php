@@ -310,6 +310,13 @@ function jobsearch_download_candidate_cv_btn($args = array()) {
     global $jobsearch_plugin_options;
     $free_shortlist_allow = isset($jobsearch_plugin_options['free-shortlist-allow']) ? $jobsearch_plugin_options['free-shortlist-allow'] : '';
     $candidate_id = isset($args['id']) ? $args['id'] : '';
+    $classes = isset($args['classes']) ? $args['classes'] : '';
+    $classes_ext = '';
+    if(isset($classes) && !empty($classes)){
+       $classes_ext = ' '.$classes.''; 
+    }
+    
+    
 
     $candidate_obj = get_post($candidate_id);
     $candidate_join_date = isset($candidate_obj->post_date) ? $candidate_obj->post_date : '';
@@ -329,72 +336,88 @@ function jobsearch_download_candidate_cv_btn($args = array()) {
         $user_def_avatar_url = isset($candidate_thumb_img[0]) && esc_url($candidate_thumb_img[0]) != '' ? $candidate_thumb_img[0] : '';
     }
 
-    $candidate_cv_file = get_post_meta($candidate_id, 'candidate_cv_file', true);
-
-    if (!empty($candidate_cv_file)) {
+    $candidate_cv_file_att = array();
+    $multiple_cv_files_allow = isset($jobsearch_plugin_options['multiple_cv_uploads']) ? $jobsearch_plugin_options['multiple_cv_uploads'] : '';
+    if ($multiple_cv_files_allow == 'on') {
+        $ca_at_cv_files = get_post_meta($candidate_id, 'candidate_cv_files', true);
+        if (!empty($ca_at_cv_files)) {
+            $candidate_cv_file_att = array(
+                'file_title' => apply_filters('jobsearch_user_attach_cv_file_title', '', $candidate_id, 0),
+                'file_url' => apply_filters('jobsearch_user_attach_cv_file_url', '', $candidate_id, 0),
+            );
+        }
+    } else if (!empty($candidate_cv_file)) {
+        $candidate_cv_file = get_post_meta($candidate_id, 'candidate_cv_file', true);
         $file_attach_id = isset($candidate_cv_file['file_id']) ? $candidate_cv_file['file_id'] : '';
         $file_url = isset($candidate_cv_file['file_url']) ? $candidate_cv_file['file_url'] : '';
 
         $cv_file_title = get_the_title($file_attach_id);
+        $candidate_cv_file_att = array(
+            'file_title' => $cv_file_title,
+            'file_url' => $file_url,
+        );
+    }
+
+    if (!empty($candidate_cv_file_att)) {
+        $cv_file_title = isset($candidate_cv_file_att['file_title']) ? $candidate_cv_file_att['file_title'] : '';
+        $file_url = isset($candidate_cv_file_att['file_url']) ? $candidate_cv_file_att['file_url'] : '';
+
         ob_start();
         ?>
-        <a href="<?php echo ($file_url) ?>" download="<?php echo ($cv_file_title) ?>" class="jobsearch-candidate-download-btn"><i class="jobsearch-icon jobsearch-download-arrow"></i> <?php esc_html_e('Download CV', 'wp-jobsearch') ?></a>
+        <a href="<?php echo ($file_url) ?>" download="<?php echo ($cv_file_title) ?>" class="jobsearch-candidate-download-btn<?php echo ($classes_ext);?>"><i class="jobsearch-icon jobsearch-download-arrow"></i> <?php esc_html_e('Download CV', 'wp-jobsearch') ?></a>
         <?php
         $download_link_btn = ob_get_clean();
         //
         if (!is_user_logged_in()) {
             ?>
-            <a href="javascript:void(0);" class="jobsearch-candidate-download-btn jobsearch-open-signin-tab"><?php esc_html_e('Download CV', 'wp-jobsearch') ?></a>
+            <a href="javascript:void(0);" class="jobsearch-candidate-download-btn jobsearch-open-signin-tab<?php echo ($classes_ext);?>"><?php esc_html_e('Download CV', 'wp-jobsearch') ?></a>
             <?php
         } else {
             $user_id = get_current_user_id();
             $is_employer = jobsearch_user_is_employer($user_id);
 
             if ($is_employer) {
-                if ($free_shortlist_allow == 'on') {
+                $employer_id = jobsearch_get_user_employer_id($user_id);
+                $employer_resumes_list = get_post_meta($employer_id, 'jobsearch_candidates_list', true);
+                $employer_resumes_list = explode(',', $employer_resumes_list);
+
+                if (in_array($candidate_id, $employer_resumes_list)) {
                     echo ($download_link_btn);
                 } else {
-                    $employer_id = jobsearch_get_user_employer_id($user_id);
-                    $employer_resumes_list = get_post_meta($employer_id, 'jobsearch_candidates_list', true);
-                    $employer_resumes_list = explode(',', $employer_resumes_list);
-                    if (in_array($candidate_id, $employer_resumes_list)) {
-                        echo ($download_link_btn);
-                    } else {
-                        ?>
-                        <a href="javascript:void(0);" class="jobsearch-candidate-download-btn jobsearch-open-dloadres-popup"><i class="jobsearch-icon jobsearch-download-arrow"></i> <?php esc_html_e('Download CV', 'wp-jobsearch') ?></a>
-                        <div class="jobsearch-modal jobsearch-typo-wrap fade" id="JobSearchDLoadResModal">
-                            <div class="modal-inner-area">&nbsp;</div>
-                            <div class="modal-content-area">
-                                <div class="modal-box-area">
-                                    <div class="user-shortlist-area">
-                                        <h4><?php esc_html_e('You must have to shortlist this candidate before download CV.', 'wp-jobsearch') ?></h4>
-                                        <div class="shortlisting-user-info">
-                                            <figure><img src="<?php echo ($user_def_avatar_url) ?>" alt=""></figure>
-                                            <h2><a><?php echo ($candidate_displayname) ?></a></h2>
-                                            <p><?php echo ($candidate_jobtitle) ?></p>
-                                            <?php
-                                            if ($candidate_join_date != '') {
-                                                ?>
-                                                <small><?php printf(esc_html__('Member Since, %s', 'wp-jobsearch'), date_i18n('M d, Y', strtotime($candidate_join_date))) ?></small>
-                                                <?php
-                                            }
+                    ?>
+                    <a href="javascript:void(0);" class="jobsearch-candidate-download-btn jobsearch-open-dloadres-popup<?php echo ($classes_ext);?>"><i class="jobsearch-icon jobsearch-download-arrow"></i> <?php esc_html_e('Download CV', 'wp-jobsearch') ?></a>
+                    <div class="jobsearch-modal jobsearch-typo-wrap fade" id="JobSearchDLoadResModal">
+                        <div class="modal-inner-area">&nbsp;</div>
+                        <div class="modal-content-area">
+                            <div class="modal-box-area">
+                                <div class="user-shortlist-area">
+                                    <h4><?php esc_html_e('You must have to shortlist this candidate before download CV.', 'wp-jobsearch') ?></h4>
+                                    <div class="shortlisting-user-info">
+                                        <figure><img src="<?php echo ($user_def_avatar_url) ?>" alt=""></figure>
+                                        <h2><a><?php echo ($candidate_displayname) ?></a></h2>
+                                        <p><?php echo ($candidate_jobtitle) ?></p>
+                                        <?php
+                                        if ($candidate_join_date != '') {
                                             ?>
-                                        </div>
-                                        <div class="shortlisting-user-btn">
+                                            <small><?php printf(esc_html__('Member Since, %s', 'wp-jobsearch'), date_i18n('M d, Y', strtotime($candidate_join_date))) ?></small>
                                             <?php
-                                            do_action('jobsearch_add_employer_resume_to_list_btn', array('id' => $candidate_id, 'download_cv' => '1'));
-                                            ?>
-                                        </div>
+                                        }
+                                        ?>
+                                    </div>
+                                    <div class="shortlisting-user-btn">
+                                        <?php
+                                        do_action('jobsearch_add_employer_resume_to_list_btn', array('id' => $candidate_id, 'download_cv' => '1'));
+                                        ?>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <?php
-                    }
+                    </div>
+                    <?php
                 }
             } else {
                 ?>
-                <a href="javascript:void(0);" class="jobsearch-candidate-download-btn employer-access-btn"><i class="jobsearch-icon jobsearch-download-arrow"></i> <?php esc_html_e('Download CV', 'wp-jobsearch') ?></a>
+                <a href="javascript:void(0);" class="jobsearch-candidate-download-btn employer-access-btn<?php echo ($classes_ext);?>"><i class="jobsearch-icon jobsearch-download-arrow"></i> <?php esc_html_e('Download CV', 'wp-jobsearch') ?></a>
                 <span class="employer-access-msg" style="display: none; float: left;"><i class="fa fa-warning"></i> <?php esc_html_e('Only an Employer can download resume.', 'wp-jobsearch') ?></span>
                 <?php
             }
@@ -429,7 +452,7 @@ function jobsearch_pckg_order_used_fjobs($order_id = 0) {
     $jobs_list_count = 0;
     if ($order_id > 0) {
         $total_jobs = get_post_meta($order_id, 'num_of_fjobs', true);
-        $jobs_list = get_post_meta($order_id, 'jobsearch_order_jobs_list', true);
+        $jobs_list = get_post_meta($order_id, 'jobsearch_order_featc_list', true);
 
         if (!empty($jobs_list)) {
             $jobs_list_count = count(explode(',', $jobs_list));
@@ -788,6 +811,9 @@ function jobsearch_load_employer_team_next_page() {
     $total_pages = isset($_POST['total_pages']) ? $_POST['total_pages'] : 1;
     $cur_page = isset($_POST['cur_page']) ? $_POST['cur_page'] : 1;
     $employer_id = isset($_POST['employer_id']) ? $_POST['employer_id'] : 1;
+    $class_pref = isset($_POST['class_pref']) && $_POST['class_pref'] != '' ? $_POST['class_pref'] : 'jobsearch';
+    $team_style = isset($_POST['team_style']) ? $_POST['team_style'] : 'default';
+    
 
     $per_page_results = 3;
 
@@ -834,7 +860,7 @@ function jobsearch_load_employer_team_next_page() {
             $team_twitterfield_val = isset($team_twitterfield_list[$exfield_counter]) ? $team_twitterfield_list[$exfield_counter] : '';
             $team_linkedinfield_val = isset($team_linkedinfield_list[$exfield_counter]) ? $team_linkedinfield_list[$exfield_counter] : '';
             ?>
-            <li class="jobsearch-column-4 new-entries" style="display: none;">
+            <li class="<?php echo ($class_pref) ?>-column-4 new-entries" style="display: none;">
                 <script>
                     jQuery('a[id^="fancybox_notes"]').fancybox({
                         'titlePosition': 'inside',
@@ -897,7 +923,9 @@ function jobsearch_load_employer_team_next_page() {
     }
 
     $html = ob_get_clean();
-
+    
+    $html = apply_filters('careerfy_employer_team_members_view',$html,$_POST);
+    
     echo json_encode(array('html' => $html));
     die;
 }
@@ -1048,6 +1076,50 @@ function jobsearch_send_email_to_multi_applicants_by_employer() {
     wp_die();
 }
 
+add_action('wp_ajax_jobsearch_applicant_to_undoreject_by_employer', 'jobsearch_applicant_to_undoreject_by_employer');
+
+function jobsearch_applicant_to_undoreject_by_employer() {
+
+    $job_id = isset($_POST['_job_id']) ? $_POST['_job_id'] : '';
+    $candidate_id = isset($_POST['_candidate_id']) ? $_POST['_candidate_id'] : '';
+
+    if ($job_id > 0 && $candidate_id > 0) {
+        $job_reject_int_list = get_post_meta($job_id, '_job_reject_interview_list', true);
+
+        $job_reject_int_list = $job_reject_int_list != '' ? explode(',', $job_reject_int_list) : array();
+        if (empty($job_reject_int_list)) {
+            $job_reject_int_list = array();
+        }
+        if (in_array($candidate_id, $job_reject_int_list) && ($key = array_search($candidate_id, $job_reject_int_list)) !== false) {
+            unset($job_reject_int_list[$key]);
+            $job_reject_int_list = implode(',', $job_reject_int_list);
+            update_post_meta($job_id, '_job_reject_interview_list', $job_reject_int_list);
+
+            //
+            $job_applicants_list = get_post_meta($job_id, 'jobsearch_job_applicants_list', true);
+            $job_applicants_list = $job_applicants_list != '' ? explode(',', $job_applicants_list) : array();
+            if (empty($job_applicants_list)) {
+                $job_applicants_list = array();
+            }
+            if (!in_array($candidate_id, $job_applicants_list)) {
+                $job_applicants_list[] = $candidate_id;
+                $job_applicants_list = implode(',', $job_applicants_list);
+                update_post_meta($job_id, 'jobsearch_job_applicants_list', $job_applicants_list);
+            }
+            //
+
+            $msg = esc_html__('Undo Rejection', 'wp-jobsearch');
+            $error = '0';
+            echo json_encode(array('msg' => $msg, 'error' => $error));
+            wp_die();
+        }
+    }
+    $msg = '';
+    $error = '1';
+    echo json_encode(array('msg' => $msg, 'error' => $error));
+    wp_die();
+}
+
 add_action('wp_ajax_jobsearch_applicant_to_reject_by_employer', 'jobsearch_applicant_to_reject_by_employer');
 
 function jobsearch_applicant_to_reject_by_employer() {
@@ -1075,6 +1147,14 @@ function jobsearch_applicant_to_reject_by_employer() {
                 unset($job_applicants_list[$key]);
                 $job_applicants_list = implode(',', $job_applicants_list);
                 update_post_meta($job_id, 'jobsearch_job_applicants_list', $job_applicants_list);
+            }
+            //
+            $job_short_int_list = get_post_meta($job_id, '_job_short_interview_list', true);
+            $job_short_int_list = $job_short_int_list != '' ? explode(',', $job_short_int_list) : array();
+            if (($key = array_search($candidate_id, $job_short_int_list)) !== false) {
+                unset($job_short_int_list[$key]);
+                $job_short_int_list = implode(',', $job_short_int_list);
+                update_post_meta($job_id, '_job_short_interview_list', $job_short_int_list);
             }
             //
 
@@ -1247,6 +1327,9 @@ function jobsearch_multi_apps_to_reject_by_employer() {
     $job_applicants_list = $job_applicants_list != '' ? explode(',', $job_applicants_list) : array();
     //
 
+    $job_short_int_list = get_post_meta($job_id, '_job_short_interview_list', true);
+    $job_short_int_list = $job_short_int_list != '' ? explode(',', $job_short_int_list) : array();
+
     if (!empty($_candidate_ids) && $job_id > 0) {
         foreach ($_candidate_ids as $candidate_id) {
             $job_reject_int_list = get_post_meta($job_id, '_job_reject_interview_list', true);
@@ -1262,6 +1345,13 @@ function jobsearch_multi_apps_to_reject_by_employer() {
                     unset($job_applicants_list[$key]);
                     $job_applicants_list = implode(',', $job_applicants_list);
                     update_post_meta($job_id, 'jobsearch_job_applicants_list', $job_applicants_list);
+                }
+                //
+                //
+                if (($key = array_search($candidate_id, $job_short_int_list)) !== false) {
+                    unset($job_short_int_list[$key]);
+                    $job_short_int_list = implode(',', $job_short_int_list);
+                    update_post_meta($job_id, '_job_short_interview_list', $job_short_int_list);
                 }
                 //
             }

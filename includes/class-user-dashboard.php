@@ -28,6 +28,7 @@ class Jobsearch_User_Dashboard_Settings {
 
         //
         add_action('wp_ajax_jobsearch_dashboard_updating_user_avatar_img', array($this, 'user_avatar_upload_ajax'));
+        add_action('wp_ajax_jobsearch_userdash_profile_delete_pthumb', array($this, 'user_avatar_profile_delete_pthumb'));
         add_action('wp_ajax_jobsearch_dashboard_updating_employer_cover_img', array($this, 'employer_cover_img_upload'));
         add_action('wp_ajax_jobsearch_dashboard_updating_candidate_cv_file', array($this, 'candidate_cv_upload_ajax'));
         //
@@ -639,6 +640,45 @@ class Jobsearch_User_Dashboard_Settings {
             //
         }
         //
+    }
+
+    public function user_avatar_profile_delete_pthumb() {
+        $cur_user_id = get_current_user_id();
+        $user_id = isset($_POST['user_id']) ? $_POST['user_id'] : '';
+        if ($cur_user_id == $user_id) {
+            $user_is_candidate = jobsearch_user_is_candidate($user_id);
+            $user_is_employer = jobsearch_user_is_employer($user_id);
+            if ($user_is_employer) {
+                $employer_id = jobsearch_get_user_employer_id($user_id);
+                
+                //
+                $def_img_url = get_avatar_url($user_id, array('size' => 132));
+                $def_img_url = $def_img_url == '' ? jobsearch_employer_image_placeholder() : $def_img_url;
+                
+                if (has_post_thumbnail($employer_id)) {
+                    $attachment_id = get_post_thumbnail_id($employer_id);
+                    wp_delete_attachment($attachment_id, true);
+                    echo json_encode(array('success' => '1', 'img_url' => $def_img_url));
+                    wp_die();
+                }
+            } else {
+                $candidate_id = jobsearch_get_user_candidate_id($user_id);
+                
+                //
+                $def_img_url = get_avatar_url($user_id, array('size' => 132));
+                $def_img_url = $def_img_url == '' ? jobsearch_candidate_image_placeholder() : $def_img_url;
+                
+                if (has_post_thumbnail($candidate_id)) {
+                    $attachment_id = get_post_thumbnail_id($candidate_id);
+                    wp_delete_attachment($attachment_id, true);
+                    echo json_encode(array('success' => '1', 'img_url' => $def_img_url));
+                    wp_die();
+                }
+            }
+            echo json_encode(array('success' => '0'));
+            wp_die();
+        }
+        wp_die();
     }
 
     public function user_avatar_upload_ajax() {

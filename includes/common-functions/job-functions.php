@@ -61,7 +61,7 @@ function jobsearch_get_job_salary_format($job_id = 0, $price = 0, $cur_tag = '')
         $ret_price = jobsearch_get_price_format($price);
     } else {
         $price = $price > 0 ? trim($price) : 0;
-        $price = preg_replace("/[^0-9,.]+/iu", "", $price);
+        $price = preg_replace("/[^0-9.]+/iu", "", $price);
         if ($cur_pos == 'left_space') {
             $ret_price = ($cur_tag != '' ? '<' . $cur_tag . '>' : '') . $job_currency . ' ' . ($cur_tag != '' ? '</' . $cur_tag . '>' : '') . number_format($price, $job_salary_deci, ".", $job_salary_sep);
         } else if ($cur_pos == 'right') {
@@ -125,8 +125,8 @@ if (!function_exists('jobsearch_job_offered_salary')) {
 
 if (!function_exists('jobsearch_job_get_all_jobtypes')) {
 
-    function jobsearch_job_get_all_jobtypes($job_id, $link_class = 'jobsearch-option-btn', $before_title = '', $after_title = '', $before_tag = '', $after_tag = '', $con_tag = 'a') {
-        
+    function jobsearch_job_get_all_jobtypes($job_id, $link_class = 'jobsearch-option-btn', $before_title = '', $after_title = '', $before_tag = '', $after_tag = '', $con_tag = 'a', $fill_type = 'bg_fill') {
+
         $job_type = wp_get_post_terms($job_id, 'jobtype');
         ob_start();
         $html = '';
@@ -141,7 +141,11 @@ if (!function_exists('jobsearch_job_get_all_jobtypes')) {
                 $jobtype_textcolor = get_term_meta($term->term_id, 'jobsearch_field_jobtype_textcolor', true);
                 $jobtype_color_str = '';
                 if ($jobtype_color != '') {
-                    $jobtype_color_str = ' style="background-color: ' . esc_attr($jobtype_color) . '; color: ' . esc_attr($jobtype_textcolor) . ' "';
+                    if ($fill_type == 'border_fill') {
+                        $jobtype_color_str = ' style="background-color: #ffffff; border-color: ' . esc_attr($jobtype_color) . '; color: ' . esc_attr($jobtype_color) . ' "';
+                    } else {
+                        $jobtype_color_str = ' style="background-color: ' . esc_attr($jobtype_color) . '; color: ' . esc_attr($jobtype_textcolor) . ' "';
+                    }
                 }
                 ?>
                 <<?php echo ($con_tag) ?> <?php echo ($link_class_str) ?> <?php echo ($jobtype_color_str); ?>>
@@ -251,12 +255,10 @@ if (!function_exists('jobsearch_job_get_all_skills')) {
 
 if (!function_exists('jobsearch_job_related_post')) {
 
-    function jobsearch_job_related_post($job_id, $title = '', $number_post = 5, $jobsearch_title_limit = 5, $job_like_class = '') {
-        
-        global $jobsearch_plugin_options;
-        
-        ob_start();
+    function jobsearch_job_related_post($job_id, $title = '', $number_post = 5, $jobsearch_title_limit = 5, $job_like_class = '', $view = 'view1') {
 
+        global $jobsearch_plugin_options;
+        ob_start();
         $filter_arr2 = array();
         $sectors = wp_get_post_terms($job_id, 'sector');
         $filter_multi_spec_arr = array();
@@ -265,13 +267,10 @@ if (!function_exists('jobsearch_job_related_post')) {
                 $filter_multi_spec_arr[] = $term->slug;
             endforeach;
         }
-
         $sectors_enable_switch = isset($jobsearch_plugin_options['sectors_onoff_switch']) ? $jobsearch_plugin_options['sectors_onoff_switch'] : '';
         $all_location_allow = isset($jobsearch_plugin_options['all_location_allow']) ? $jobsearch_plugin_options['all_location_allow'] : '';
         $job_types_switch = isset($jobsearch_plugin_options['job_types_switch']) ? $jobsearch_plugin_options['job_types_switch'] : '';
-        
         $tax_query = array();
-
         if (!empty($filter_multi_spec_arr)) {
             $tax_query = array(
                 'taxonomy' => 'sector',
@@ -314,118 +313,166 @@ if (!function_exists('jobsearch_job_related_post')) {
         $featured_job_mypost = apply_filters('jobsearch_jobs_listing_parameters', $featured_job_mypost);
         $featured_job_loop_count = new WP_Query($featured_job_mypost);
         $featuredjob_count_post = $featured_job_loop_count->found_posts;
+
+
+        $related_jobs_output = '';
         if ($featuredjob_count_post > 0) {
-            if ($title != '') {
-                ?>
-                <div class="jobsearch-section-title"><h2><?php echo esc_html($title); ?></h2></div>
-                <?php
-            }
-            ob_start();
-            ?>
-            <div class="jobsearch-job jobsearch-joblisting-classic jobsearch-jobdetail-joblisting">
-                <ul class="jobsearch-row">
-                    <?php
-                    // getting if record not found
-                    $cs_search_result_page = isset($cs_plugin_options['cs_search_result_page']) ? $cs_plugin_options['cs_search_result_page'] : '';
-                    while ($featured_job_loop_count->have_posts()) : $featured_job_loop_count->the_post();
-                        global $post;
-                        $job_id = $post;
-                        $job_random_id = rand(1111111, 9999999);
-                        $post_thumbnail_id = jobsearch_job_get_profile_image($job_id);
-                        $post_thumbnail_image = wp_get_attachment_image_src($post_thumbnail_id, 'jobsearch-job-medium');
-                        $post_thumbnail_src = isset($post_thumbnail_image[0]) && esc_url($post_thumbnail_image[0]) != '' ? $post_thumbnail_image[0] : '';
-                        $post_thumbnail_src = $post_thumbnail_src == '' ? jobsearch_no_image_placeholder() : $post_thumbnail_src;
-                        $jobsearch_job_featured = get_post_meta($job_id, 'jobsearch_field_job_featured', true);
-                        $company_name = jobsearch_job_get_company_name($job_id, '@ ');
-                        $get_job_location = get_post_meta($job_id, 'jobsearch_field_location_address', true);
 
-                        $job_city_title = '';
-                        $get_job_city = get_post_meta($job_id, 'jobsearch_field_location_location3', true);
-                        if ($get_job_city == '') {
-                            $get_job_city = get_post_meta($job_id, 'jobsearch_field_location_location2', true);
-                        }
-                        if ($get_job_city == '') {
-                            $get_job_city = get_post_meta($job_id, 'jobsearch_field_location_location1', true);
-                        }
-
-                        $job_city_tax = $get_job_city != '' ? get_term_by('slug', $get_job_city, 'job-location') : '';
-                        if (is_object($job_city_tax)) {
-                            $job_city_title = $job_city_tax->name;
-                        }
-
-                        $job_type_str = jobsearch_job_get_all_jobtypes($job_id, 'jobsearch-option-btn');
-                        $sector_str = jobsearch_job_get_all_sectors($job_id, '', '', '', '<li><i class="jobsearch-icon jobsearch-filter-tool-black-shape"></i>', '</li>');
-                        ?>
-                        <li class="jobsearch-column-12">
-                            <div class="jobsearch-joblisting-classic-wrap">
-                                <?php if ($post_thumbnail_src != '') { ?>
-                                    <figure>
-                                        <a href="<?php echo esc_url(get_permalink($job_id)); ?>">
-                                            <img src="<?php echo esc_url($post_thumbnail_src) ?>" alt="">
-                                        </a>
-                                    </figure>
-                                <?php } ?>
-                                <div class="jobsearch-joblisting-text">
-                                    <div class="jobsearch-list-option">
-                                        <h2>
-                                            <a href="<?php echo esc_url(get_permalink($job_id)); ?>" title="<?php echo esc_html(get_the_title($job_id)); ?>">
-                                                <?php echo get_the_title($job_id); ?>
-                                            </a>
-                                            <?php
-                                            if ($jobsearch_job_featured == 'on') {
-                                                ?>
-                                                <span><?php echo esc_html__('Featured', 'wp-jobsearch'); ?></span>
-                                                <?php
-                                            }
-                                            ?>  
-                                        </h2>
-                                        <ul>
-                                            <?php 
-                                            if ($company_name != '') { ?>
-                                                <li><?php echo force_balance_tags($company_name); ?></li>
-                                                <?php
-                                            }
-                                            if (!empty($job_city_title) && $all_location_allow == 'on') {
-                                                ?>
-                                                <li><i class="jobsearch-icon jobsearch-maps-and-flags"></i><?php echo esc_html($job_city_title); ?></li>
-                                                <?php
-                                            }
-                                            if (!empty($sector_str) && $sectors_enable_switch == 'on') {
-                                                echo apply_filters('jobsearch_joblisting_sector_str_html', $sector_str, $job_id, '<li><i class="jobsearch-icon jobsearch-calendar"></i>', '</li>');
-                                            }
-                                            ?>  
-                                        </ul>
-                                    </div>
-                                    <div class="jobsearch-job-userlist">
-                                        <?php
-                                        if ($job_type_str != '' && $job_types_switch == 'on') {
-                                            echo force_balance_tags($job_type_str);
-                                        }
-                                        $figcaption_div = true;
-                                        $book_mark_args = array(
-                                            'job_id' => $job_id,
-                                            'before_icon' => 'fa fa-heart-o',
-                                            'after_icon' => 'fa fa-heart',
-                                            'anchor_class' => $job_like_class
-                                        );
-                                        do_action('jobsearch_job_shortlist_button_frontend', $book_mark_args);
-                                        ?>
-                                    </div>
-                                    <div class="clearfix"></div>
-                                </div>
-                            </div>
-                        </li>
-                        <?php
-                    endwhile;
-                    wp_reset_postdata();
+            if ($view == 'view1') {
+                if ($title != '') {
                     ?>
-                </ul>
-            </div>
-            <?php
-            $rel_jobs_html = ob_get_clean();
-            echo apply_filters('jobsearch_job_detail_related_jobs_html', $rel_jobs_html, $featured_job_loop_count);
+                    <div class="jobsearch-section-title"><h2><?php echo esc_html($title); ?></h2></div>
+                    <?php
+                }
+                ob_start();
+                ?>
+                <div class="jobsearch-job jobsearch-joblisting-classic jobsearch-jobdetail-joblisting">
+                    <ul class="jobsearch-row">
+                        <?php
+                        // getting if record not found
+                        $cs_search_result_page = isset($cs_plugin_options['cs_search_result_page']) ? $cs_plugin_options['cs_search_result_page'] : '';
+                        while ($featured_job_loop_count->have_posts()) : $featured_job_loop_count->the_post();
+                            global $post;
+                            $job_id = $post;
+                            $job_random_id = rand(1111111, 9999999);
+                            $post_thumbnail_id = jobsearch_job_get_profile_image($job_id);
+                            $post_thumbnail_image = wp_get_attachment_image_src($post_thumbnail_id, 'jobsearch-job-medium');
+                            $post_thumbnail_src = isset($post_thumbnail_image[0]) && esc_url($post_thumbnail_image[0]) != '' ? $post_thumbnail_image[0] : '';
+                            $post_thumbnail_src = $post_thumbnail_src == '' ? jobsearch_no_image_placeholder() : $post_thumbnail_src;
+                            $jobsearch_job_featured = get_post_meta($job_id, 'jobsearch_field_job_featured', true);
+                            $company_name = jobsearch_job_get_company_name($job_id, '@ ');
+                            $get_job_location = get_post_meta($job_id, 'jobsearch_field_location_address', true);
+
+                            $job_city_title = '';
+                            $get_job_city = get_post_meta($job_id, 'jobsearch_field_location_location3', true);
+                            if ($get_job_city == '') {
+                                $get_job_city = get_post_meta($job_id, 'jobsearch_field_location_location2', true);
+                            }
+                            if ($get_job_city == '') {
+                                $get_job_city = get_post_meta($job_id, 'jobsearch_field_location_location1', true);
+                            }
+
+                            $job_city_tax = $get_job_city != '' ? get_term_by('slug', $get_job_city, 'job-location') : '';
+                            if (is_object($job_city_tax)) {
+                                $job_city_title = $job_city_tax->name;
+                            }
+
+                            $job_type_str = jobsearch_job_get_all_jobtypes($job_id, 'jobsearch-option-btn');
+                            $sector_str = jobsearch_job_get_all_sectors($job_id, '', '', '', '<li><i class="jobsearch-icon jobsearch-filter-tool-black-shape"></i>', '</li>');
+                            ?>
+                            <li class="jobsearch-column-12">
+                                <div class="jobsearch-joblisting-classic-wrap">
+                                    <?php if ($post_thumbnail_src != '') { ?>
+                                        <figure>
+                                            <a href="<?php echo esc_url(get_permalink($job_id)); ?>">
+                                                <img src="<?php echo esc_url($post_thumbnail_src) ?>" alt="">
+                                            </a>
+                                        </figure>
+                                    <?php } ?>
+                                    <div class="jobsearch-joblisting-text">
+                                        <div class="jobsearch-list-option">
+                                            <h2>
+                                                <a href="<?php echo esc_url(get_permalink($job_id)); ?>" title="<?php echo esc_html(get_the_title($job_id)); ?>">
+                                                    <?php echo get_the_title($job_id); ?>
+                                                </a>
+                                                <?php
+                                                if ($jobsearch_job_featured == 'on') {
+                                                    ?>
+                                                    <span><?php echo esc_html__('Featured', 'wp-jobsearch'); ?></span>
+                                                    <?php
+                                                }
+                                                ?>  
+                                            </h2>
+                                            <ul>
+                                                <?php if ($company_name != '') { ?>
+                                                    <li><?php echo force_balance_tags($company_name); ?></li>
+                                                    <?php
+                                                }
+                                                if (!empty($job_city_title) && $all_location_allow == 'on') {
+                                                    ?>
+                                                    <li><i class="jobsearch-icon jobsearch-maps-and-flags"></i><?php echo esc_html($job_city_title); ?></li>
+                                                    <?php
+                                                }
+                                                if (!empty($sector_str) && $sectors_enable_switch == 'on') {
+                                                    echo apply_filters('jobsearch_joblisting_sector_str_html', $sector_str, $job_id, '<li><i class="jobsearch-icon jobsearch-calendar"></i>', '</li>');
+                                                }
+                                                ?>  
+                                            </ul>
+                                        </div>
+                                        <div class="jobsearch-job-userlist">
+                                            <?php
+                                            if ($job_type_str != '' && $job_types_switch == 'on') {
+                                                echo force_balance_tags($job_type_str);
+                                            }
+                                            $figcaption_div = true;
+                                            $book_mark_args = array(
+                                                'job_id' => $job_id,
+                                                'before_icon' => 'fa fa-heart-o',
+                                                'after_icon' => 'fa fa-heart',
+                                                'anchor_class' => $job_like_class
+                                            );
+                                            do_action('jobsearch_job_shortlist_button_frontend', $book_mark_args);
+                                            ?>
+                                        </div>
+                                        <div class="clearfix"></div>
+                                    </div>
+                                </div>
+                            </li>
+                            <?php
+                        endwhile;
+                        wp_reset_postdata();
+                        ?>
+                    </ul>
+                </div>
+                <?php
+                $rel_jobs_html = ob_get_clean();
+                echo apply_filters('jobsearch_job_detail_related_jobs_html', $rel_jobs_html, $featured_job_loop_count);
+                $related_jobs_output = ob_get_clean();
+            } elseif ($view == 'view2') {
+                ob_start();
+                $rel_jobs_html = '';
+                $related_args = array(
+                    'title' => $title,
+                    'featured_job_loop_count' => $featured_job_loop_count,
+                    'job_types_switch' => $job_types_switch,
+                    'all_location_allow' => $all_location_allow,
+                );
+                do_action('careerfy_job_detail_related_view2', $rel_jobs_html, $related_args);
+                $rel_jobs_html = ob_get_clean();
+                echo apply_filters('jobsearch_job_detail_related_jobs_html', $rel_jobs_html, $featured_job_loop_count);
+                $related_jobs_output = ob_get_clean();
+            } elseif ($view == 'view3') {
+                ob_start();
+                $rel_jobs_html = '';
+                $related_args = array(
+                    'title' => $title,
+                    'featured_job_loop_count' => $featured_job_loop_count,
+                    'job_types_switch' => $job_types_switch,
+                    'all_location_allow' => $all_location_allow,
+                );
+                do_action('careerfy_job_detail_related_view3', $rel_jobs_html, $related_args);
+                $rel_jobs_html = ob_get_clean();
+                echo apply_filters('jobsearch_job_detail_related_jobs_html', $rel_jobs_html, $featured_job_loop_count);
+                $related_jobs_output = ob_get_clean();
+            } elseif ($view == 'view4') {
+                
+                ob_start();
+                $rel_jobs_html = '';
+                $related_args = array(
+                    'title' => $title,
+                    'featured_job_loop_count' => $featured_job_loop_count,
+                    'job_types_switch' => $job_types_switch,
+                    'all_location_allow' => $all_location_allow,
+                );
+                do_action('careerfy_job_detail_related_view4', $rel_jobs_html, $related_args);
+                $rel_jobs_html = ob_get_clean();
+                echo apply_filters('jobsearch_job_detail_related_jobs_html', $rel_jobs_html, $featured_job_loop_count);
+                $related_jobs_output = ob_get_clean();
+            }
         }
-        $related_jobs_output = ob_get_clean();
+
+
+
         return apply_filters('related_jobs', $related_jobs_output, $job_id);
     }
 
@@ -433,10 +480,10 @@ if (!function_exists('jobsearch_job_related_post')) {
 
 if (!function_exists('jobsearch_job_related_company_post')) {
 
-    function jobsearch_job_related_company_post($job_id, $title = '', $number_post = 5, $jobsearch_title_limit = 5) {
+    function jobsearch_job_related_company_post($job_id, $title = '', $number_post = 5, $jobsearch_title_limit = 5, $view = 'view1') {
         ob_start();
         global $jobsearch_plugin_options;
-        
+
         $all_location_allow = isset($jobsearch_plugin_options['all_location_allow']) ? $jobsearch_plugin_options['all_location_allow'] : '';
 
         $filter_arr2 = array();
@@ -483,50 +530,66 @@ if (!function_exists('jobsearch_job_related_company_post')) {
         $featured_job_mypost = apply_filters('jobsearch_jobs_listing_parameters', $featured_job_mypost);
         $featured_job_loop_count = new WP_Query($featured_job_mypost);
         $featuredjob_count_post = $featured_job_loop_count->found_posts;
+
         if ($featuredjob_count_post > 0) {
-            ?>
-            <div class="widget widget_view_jobs">
-                <?php
-                if ($title != '') {
-                    ?>
-                    <div class="jobsearch-widget-title"><h2><?php echo esc_html($title); ?></h2></div>
-                <?php } ?> 
-                <ul>
+
+            if ($view == 'view2') {
+                $similar_args = array(
+                    'title' => $title,
+                    'jobsearch_title_limit' => $jobsearch_title_limit,
+                    'featured_job_loop_count' => $featured_job_loop_count,
+                    'all_location_allow' => $all_location_allow,
+                );
+
+                do_action('careerfy_similar_jobs', $similar_args);
+            } else {
+                ?>
+                <div class="widget widget_view_jobs">
                     <?php
-                    // getting if record not found
-                    $cs_search_result_page = isset($cs_plugin_options['cs_search_result_page']) ? $cs_plugin_options['cs_search_result_page'] : '';
-                    while ($featured_job_loop_count->have_posts()) : $featured_job_loop_count->the_post();
-                        global $post;
-                        $job_id = $post;
-                        $get_job_location = get_post_meta($job_id, 'jobsearch_field_location_address', true);
-                        $sector_str = jobsearch_job_get_all_sectors($job_id, '', '', '', '<span>', '</span>');
+                    if ($title != '') {
                         ?>
-                        <li>
-                            <h6>
-                                <a href="<?php echo esc_url(get_permalink($job_id)); ?>" title="<?php echo esc_html(get_the_title($job_id)); ?>">
-                                    <?php echo esc_html(wp_trim_words(get_the_title($job_id), $jobsearch_title_limit)); ?>
-                                </a>    
-                            </h6>
-                            <?php
-                            if (!empty($sector_str)) {
-                                echo force_balance_tags($sector_str);
-                            }
-                            if (!empty($get_job_location) && $all_location_allow == 'on') {
-                                ?>
-                                <small><?php echo esc_html($get_job_location); ?></small>
-                                <?php
-                            }
-                            ?>
-                        </li> 
+                        <div class="jobsearch-widget-title"><h2><?php echo esc_html($title); ?></h2></div>
+                    <?php } ?> 
+                    <ul>
                         <?php
-                    endwhile;
-                    wp_reset_postdata();
-                    ?>
-                </ul>
-                <a href="<?php echo esc_url(get_permalink($job_posted_by)); ?>" title="<?php echo esc_html(get_the_title($job_id)); ?>" class="widget_view_jobs_btn"><?php echo esc_html__('View all jobs', 'wp-jobsearch') ?> <i class="jobsearch-icon jobsearch-arrows32"></i></a>   
-            </div>
-            <?php
+                        // getting if record not found
+                        $cs_search_result_page = isset($cs_plugin_options['cs_search_result_page']) ? $cs_plugin_options['cs_search_result_page'] : '';
+                        while ($featured_job_loop_count->have_posts()) : $featured_job_loop_count->the_post();
+                            global $post;
+                            $job_id = $post;
+                            $get_job_location = get_post_meta($job_id, 'jobsearch_field_location_address', true);
+                            $sector_str = jobsearch_job_get_all_sectors($job_id, '', '', '', '<span>', '</span>');
+                            ?>
+                            <li>
+                                <h6>
+                                    <a href="<?php echo esc_url(get_permalink($job_id)); ?>" title="<?php echo esc_html(get_the_title($job_id)); ?>">
+                                        <?php echo esc_html(wp_trim_words(get_the_title($job_id), $jobsearch_title_limit)); ?>
+                                    </a>    
+                                </h6>
+                                <?php
+                                if (!empty($sector_str)) {
+                                    echo force_balance_tags($sector_str);
+                                }
+                                if (!empty($get_job_location) && $all_location_allow == 'on') {
+                                    ?>
+                                    <small><?php echo esc_html($get_job_location); ?></small>
+                                    <?php
+                                }
+                                ?>
+                            </li> 
+                            <?php
+                        endwhile;
+                        wp_reset_postdata();
+                        ?>
+                    </ul>
+                    <a href="<?php echo esc_url(get_permalink($job_posted_by)); ?>" title="<?php echo esc_html(get_the_title($job_id)); ?>" class="widget_view_jobs_btn"><?php echo esc_html__('View all jobs', 'wp-jobsearch') ?> <i class="jobsearch-icon jobsearch-arrows32"></i></a>   
+                </div>
+                <?php
+            }
         }
+
+
+
         $related_jobs_output = ob_get_clean();
         return apply_filters('jobsearch_sidebar_related_jobs', $related_jobs_output, $job_id);
     }
@@ -597,7 +660,7 @@ if (!function_exists('jobsearch_job_send_message_employer_callback')) {
     function jobsearch_job_send_message_employer_callback() {
         global $jobsearch_plugin_options;
         $cnt_job_emp_wout_log = isset($jobsearch_plugin_options['job_emp_cntct_wout_login']) ? $jobsearch_plugin_options['job_emp_cntct_wout_login'] : '';
-        
+
         $send_message_job_id = $_REQUEST['send_message_job_id'];
         $send_message_content = $_REQUEST['send_message_content'];
         $send_message_subject = $_REQUEST['send_message_subject'];
@@ -631,11 +694,13 @@ if (!function_exists('jobsearch_job_send_message_html_filter_callback')) {
         global $jobsearch_plugin_options;
         extract(shortcode_atts(array(
             'job_employer_id' => '',
-            'job_id' => ''
+            'job_id' => '',
+            'btn_class' => '',
+            'btn_text' => '',
                         ), $arg));
 
         $job_det_contact_form = isset($jobsearch_plugin_options['job_det_contact_form']) ? $jobsearch_plugin_options['job_det_contact_form'] : '';
-        $cnt_job_emp_wout_log = isset($jobsearch_plugin_options['job_emp_cntct_wout_login']) ? $jobsearch_plugin_options['job_emp_cntct_wout_login'] : '';
+        $cnt_job_emp_wout_log = isset($jobsearch_plugin_options['emp_cntct_wout_login']) ? $jobsearch_plugin_options['emp_cntct_wout_login'] : '';
 
         $send_message_btn_class = 'jobsearch-open-signin-tab';
         if (is_user_logged_in()) {
@@ -645,6 +710,17 @@ if (!function_exists('jobsearch_job_send_message_html_filter_callback')) {
                 $send_message_btn_class = 'jobsearch-sendmessage-messsage-popup-btn';
             }
         }
+
+        $btn_class_new = 'jobsearch-sendmessage-btn';
+        if (isset($btn_class) && !empty($btn_class)) {
+            $btn_class_new = $btn_class;
+        }
+        $btn_text_new = 'Contact Employer';
+        if (isset($btn_text) && !empty($btn_text)) {
+            $btn_text_new = $btn_text;
+        }
+
+
         $view_from_pop = false;
         if (is_user_logged_in() && jobsearch_user_is_candidate()) {
             $view_from_pop = true;
@@ -653,11 +729,11 @@ if (!function_exists('jobsearch_job_send_message_html_filter_callback')) {
             $view_from_pop = true;
             $send_message_btn_class = 'jobsearch-sendmessage-popup-btn';
         }
-        
+
         ob_start();
         if ($job_det_contact_form == 'on') {
             ?>
-            <a href="javascript:void(0);" class="jobsearch-sendmessage-btn <?php echo esc_html($send_message_btn_class); ?>"><i class="jobsearch-icon jobsearch-envelope"></i> <?php echo esc_html__('Contact Employer', 'wp-jobsearch') ?></a>
+            <a href="javascript:void(0);" class="<?php echo esc_html($btn_class_new); ?> <?php echo esc_html($send_message_btn_class); ?>"><i class="jobsearch-icon jobsearch-envelope"></i> <?php echo ($btn_text_new) ?></a>
             <?php
             if ($view_from_pop) {
                 $popup_args = array(
@@ -828,10 +904,16 @@ if (!function_exists('jobsearch_job_send_to_email_callback')) {
 
     function jobsearch_job_send_to_email_callback($arg = array()) {
         extract(shortcode_atts(array(
-            'job_id' => ''
+            'job_id' => '',
+            'btn_class' => '',
                         ), $arg));
+
+        $btn_class_new = '';
+        if (isset($btn_class) && !empty($btn_class)) {
+            $btn_class_new = $btn_class;
+        }
         ?>
-        <a href="javascript:void(0);" class="jobsearch-jobdetail-btn active jobsearch-send-email-popup-btn"><i class="jobsearch-icon jobsearch-envelope"></i> <?php echo esc_html__('Email Job', 'wp-jobsearch') ?></a>
+        <a href="javascript:void(0);" class="<?php echo ($btn_class_new); ?> active jobsearch-send-email-popup-btn"><i class="jobsearch-icon jobsearch-envelope"></i> <?php echo esc_html__('Email Job', 'wp-jobsearch') ?></a>
         <?php
         $popup_args = array(
             'job_id' => $job_id,
@@ -943,6 +1025,29 @@ if (!function_exists('jobsearch_jobs_update_cron_once')) {
 
 }
 
+function jobsearch_remove_exfeatkeys_jobs_query($meta_query, $add_forc_feat = 'no') {
+    $new_meta_qury = array();
+    if (isset($meta_query[0]) && !empty($meta_query[0])) {
+        foreach ($meta_query[0] as $meta_field) {
+            if (isset($meta_field['key']) && $meta_field['key'] == 'jobsearch_field_job_featured') {
+                continue;
+            } else if (isset($meta_field[0]['key']) && $meta_field[0]['key'] == 'jobsearch_field_job_featured') {
+                continue;
+            } else {
+                $new_meta_qury[] = $meta_field;
+            }
+        }
+    }
+    if ($add_forc_feat == 'yes') {
+        $new_meta_qury[] = array(
+            "key" => "jobsearch_field_job_featured",
+            "value" => "on",
+            "compare" => "="
+        );
+    }
+    return $new_meta_qury;
+}
+
 if (!function_exists('jobsearch_employer_update_jobs_status')) {
     add_action('jobsearch_employer_update_jobs_status', 'jobsearch_employer_update_jobs_status', 10, 1);
 
@@ -983,4 +1088,4 @@ if (!function_exists('jobsearch_employer_update_jobs_status')) {
         }
     }
 
-}
+}    

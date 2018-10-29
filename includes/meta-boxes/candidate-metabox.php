@@ -26,9 +26,22 @@ function jobsearch_candidates_time_save($post_id) {
             } else {
                 update_post_meta($post_id, 'candidate_cv_file', '');
             }
+            
+            do_action('jobsearch_cand_bk_meta_fields_save_after', $post_id);
         }
     }
 }
+
+if (class_exists('JobSearchMultiPostThumbnails')) {
+    new JobSearchMultiPostThumbnails(array(
+        'label' => 'Cover Image',
+        'id' => 'cover-image',
+        'post_type' => 'candidate',
+            )
+    );
+}
+
+
 
 /**
  * Candidate settings meta box.
@@ -441,6 +454,7 @@ function jobsearch_candidates_meta_settings() {
             </div>
         </div>
         <?php
+        echo apply_filters('jobsearch_cand_backend_meta_after_cv_field', '', $_post_id);
         //
         $security_questions = isset($jobsearch_plugin_options['jobsearch-security-questions']) ? $jobsearch_plugin_options['jobsearch-security-questions'] : '';
         if (!empty($security_questions) && sizeof($security_questions) >= 3) {

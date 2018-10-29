@@ -75,6 +75,18 @@ function jobsearch_user_account_links($args = array()) {
                                         <?php esc_html_e('Packages', 'wp-jobsearch') ?>
                                     </a>
                                 </li>
+                                <?php
+                                if (class_exists('WC_Subscription')) {
+                                    ?>
+                                    <li<?php echo ($get_tab == 'user-subscriptions' ? ' class="active"' : '') ?>>
+                                        <a href="<?php echo add_query_arg(array('tab' => 'user-subscriptions'), $page_url) ?>">
+                                            <i class="jobsearch-icon jobsearch-business"></i>
+                                            <?php esc_html_e('Subscriptions', 'wp-jobsearch') ?>
+                                        </a>
+                                    </li>
+                                    <?php
+                                }
+                                ?>
                                 <li<?php echo ($get_tab == 'user-transactions' ? ' class="active"' : '') ?>>
                                     <a href="<?php echo add_query_arg(array('tab' => 'user-transactions'), $page_url) ?>">
                                         <i class="jobsearch-icon jobsearch-salary"></i>
@@ -143,6 +155,18 @@ function jobsearch_user_account_links($args = array()) {
                                         <?php esc_html_e('Packages', 'wp-jobsearch') ?>
                                     </a>
                                 </li>
+                                <?php
+                                if (class_exists('WC_Subscription')) {
+                                    ?>
+                                    <li<?php echo ($get_tab == 'user-subscriptions' ? ' class="active"' : '') ?>>
+                                        <a href="<?php echo add_query_arg(array('tab' => 'user-subscriptions'), $page_url) ?>">
+                                            <i class="jobsearch-icon jobsearch-business"></i>
+                                            <?php esc_html_e('Subscriptions', 'wp-jobsearch') ?>
+                                        </a>
+                                    </li>
+                                    <?php
+                                }
+                                ?>
                                 <li<?php echo ($get_tab == 'user-transactions' ? ' class="active"' : '') ?>>
                                     <a href="<?php echo add_query_arg(array('tab' => 'user-transactions'), $page_url) ?>">
                                         <i class="jobsearch-icon jobsearch-salary"></i>
