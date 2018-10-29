@@ -29,7 +29,7 @@ if ($employer_id > 0) {
                 'post_status' => 'wc-completed',
                 'order' => 'DESC',
                 'orderby' => 'ID',
-                'meta_query' => array(
+                'meta_query' => apply_filters('jobsearch_emp_dash_pkgs_list_tab_mquery', array(
                     array(
                         'key' => 'jobsearch_order_attach_with',
                         'value' => 'package',
@@ -45,8 +45,9 @@ if ($employer_id > 0) {
                         'value' => $user_id,
                         'compare' => '=',
                     ),
-                ),
+                )),
             );
+            
             $pkgs_query = new WP_Query($args);
             $total_pkgs = $pkgs_query->found_posts;
             if ($pkgs_query->have_posts()) {
@@ -61,7 +62,7 @@ if ($employer_id > 0) {
                                 <div class="jobsearch-table-cell"><?php esc_html_e('Used', 'wp-jobsearch') ?></div>
                                 <div class="jobsearch-table-cell"><?php esc_html_e('Remaining', 'wp-jobsearch') ?></div>
                                 <div class="jobsearch-table-cell"><?php esc_html_e('Package Expiry', 'wp-jobsearch') ?></div>
-                                <div class="jobsearch-table-cell"><?php esc_html_e('Satus', 'wp-jobsearch') ?></div>
+                                <div class="jobsearch-table-cell"><?php esc_html_e('Status', 'wp-jobsearch') ?></div>
                             </div>
                         </div>
                         <?php

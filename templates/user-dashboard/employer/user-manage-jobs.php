@@ -93,7 +93,13 @@ if ($employer_id > 0) {
                 $job_reject_int_list = jobsearch_is_post_ids_array($job_reject_int_list, 'candidate');
                 $job_reject_int_list_c = !empty($job_reject_int_list) ? count($job_reject_int_list) : 0;
 
-                $_selected_view = isset($_GET['ap_view']) && $_GET['ap_view'] != '' ? $_GET['ap_view'] : 'less';
+                $applicants_mange_view = get_post_meta($employer_id, 'applicants_mange_view', true);
+
+                $_selected_view = isset($_GET['ap_view']) && $_GET['ap_view'] != '' ? $_GET['ap_view'] : $applicants_mange_view;
+                if ($applicants_mange_view != '' && $applicants_mange_view != $_selected_view) {
+                    update_post_meta($employer_id, 'applicants_mange_view', $_selected_view);
+                    $_selected_view = get_post_meta($employer_id, 'applicants_mange_view', true);
+                }
 
                 $_mod_tab = isset($_GET['mod']) && $_GET['mod'] != '' ? $_GET['mod'] : 'applicants';
                 $_sort_selected = isset($_GET['sort_by']) && $_GET['sort_by'] != '' ? $_GET['sort_by'] : '';
@@ -135,7 +141,7 @@ if ($employer_id > 0) {
                                     <?php
                                 }
                                 ?>
-                                <select id="jobsearch-applicants-sort" class="selectize-select" name="sort_by">
+                                <select id="jobsearch-applicants-sort" class="selectize-select" placeholder="<?php esc_html_e('Sort by', 'wp-jobsearch') ?>" name="sort_by">
                                     <option value=""><?php esc_html_e('Sort by', 'wp-jobsearch') ?></option>
                                     <option value="recent"<?php echo ($_sort_selected == 'recent' ? ' selected="selected"' : '') ?>><?php esc_html_e('Recent', 'wp-jobsearch') ?></option>
                                     <option value="alphabetic"<?php echo ($_sort_selected == 'alphabetic' ? ' selected="selected"' : '') ?>><?php esc_html_e('Alphabet Order', 'wp-jobsearch') ?></option>
@@ -226,8 +232,8 @@ if ($employer_id > 0) {
                             </div>
                         </div>
                         <div class="sort-list-view">
-                            <a href="javascript:void(0);" class="apps-view-btn<?php echo ($_selected_view == 'more' ? '' : ' active') ?>" data-view="less"><i class="fa fa-list"></i></a>
-                            <a href="javascript:void(0);" class="apps-view-btn<?php echo ($_selected_view == 'more' ? ' active' : '') ?>" data-view="more"><i class="fa fa-bars"></i></a>
+                            <a href="javascript:void(0);" class="apps-view-btn<?php echo ($_selected_view == 'list' ? ' active' : '') ?>" data-view="list"><i class="fa fa-list"></i></a>
+                            <a href="javascript:void(0);" class="apps-view-btn<?php echo ($_selected_view == 'grid' ? ' active' : '') ?>" data-view="grid"><i class="fa fa-bars"></i></a>
                         </div>
                     </div>
                     <?php
@@ -245,10 +251,15 @@ if ($employer_id > 0) {
                     $offset = $reults_per_page;
                     $job_applicants_list = array_slice($job_applicants_list, $start, $offset);
                     ?>
-                    <div class="jobsearch-applied-jobs">
+                    <div class="jobsearch-applied-jobs <?php echo ($_selected_view == 'grid' ? 'aplicants-grid-view' : '') ?>">
                         <?php
                         if (!empty($job_applicants_list)) {
                             ?>
+                            <script>
+                                jQuery(function () {
+                                    jQuery('.jobsearch-apppli-tooltip').tooltip();
+                                });
+                            </script>
                             <ul class="jobsearch-row">
                                 <?php
                                 foreach ($job_applicants_list as $_candidate_id) {
@@ -290,203 +301,380 @@ if ($employer_id > 0) {
                                     $candidate_phone = get_post_meta($_candidate_id, 'jobsearch_field_user_phone', true);
 
                                     $send_message_form_rand = rand(100000, 999999);
-                                    ?>
-                                    <li class="jobsearch-column-12">
-                                        <script>
-                                            jQuery(document).on('click', '.jobsearch-modelemail-btn-<?php echo ($send_message_form_rand) ?>', function () {
-                                                jobsearch_modal_popup_open('JobSearchModalSendEmail<?php echo ($send_message_form_rand) ?>');
-                                            });
-                                        </script>
-                                        <div class="jobsearch-applied-jobs-wrap">
-                                            <div class="candidate-select-box">
-                                                <input type="checkbox" name="app_candidate_sel[]" id="app_candidate_sel_<?php echo $_candidate_id ?>" value="<?php echo $_candidate_id ?>">
-                                                <label for="app_candidate_sel_<?php echo $_candidate_id ?>"></label>
-                                            </div>
-                                            <a class="jobsearch-applied-jobs-thumb">
-                                                <img src="<?php echo ($user_def_avatar_url) ?>" alt="">
-                                            </a>
-                                            <div class="jobsearch-applied-jobs-text">
-                                                <div class="jobsearch-applied-jobs-left">
-                                                    <?php
-                                                    if ($candidate_jobtitle != '') {
+
+                                    if ($_selected_view == 'grid') {
+                                        ?>
+                                        <li class="jobsearch-column-4">
+                                            <script>
+                                                jQuery(document).on('click', '.jobsearch-modelemail-btn-<?php echo ($send_message_form_rand) ?>', function () {
+                                                    jobsearch_modal_popup_open('JobSearchModalSendEmail<?php echo ($send_message_form_rand) ?>');
+                                                });
+                                            </script>
+                                            <div class="aplicants-grid-view-wrap">
+                                                <div class="aplicants-grid-inner-con">
+                                                    <div class="candidate-select-box">
+                                                        <input type="checkbox" name="app_candidate_sel[]" id="app_candidate_sel_<?php echo $_candidate_id ?>" value="<?php echo $_candidate_id ?>">
+                                                        <label for="app_candidate_sel_<?php echo $_candidate_id ?>"></label>
+                                                    </div>
+                                                    <a class="aplicants-grid-view-thumb">
+                                                        <img src="<?php echo ($user_def_avatar_url) ?>" alt="">
+                                                    </a>
+                                                    <?php echo apply_filters('jobsearch_applicants_list_before_title', '', $_candidate_id, $_job_id); ?>
+                                                    <h2>
+                                                        <a href="<?php echo get_permalink($_candidate_id) ?>"><?php echo get_the_title($_candidate_id) ?></a>
+                                                    </h2>
+                                                    <p>
+                                                        <?php
+                                                        if ($candidate_jobtitle != '') {
+                                                            echo ($candidate_jobtitle);
+                                                        }
+                                                        if ($candidate_jobtitle != '' && $candidate_sector != '') {
+                                                            echo ', ';
+                                                        }
+                                                        if ($candidate_sector != '') {
+                                                            echo '<a>' . ($candidate_sector) . '</a>';
+                                                        }
                                                         ?>
-                                                        <span> <?php echo ($candidate_jobtitle) ?></span>
+                                                    </p>
+                                                    <?php
+                                                    if ($candidate_salary != '') {
+                                                        echo '<p>' . sprintf(esc_html__('Salary: %s', 'wp-jobsearch'), $candidate_salary) . '</p>';
+                                                    }
+                                                    ?>
+                                                    <ul class="short-li-icons">
+                                                        <li class="jobsearch-apppli-tooltip <?php echo (in_array($_candidate_id, $viewed_candidates) ? 'viewd' : 'unviewed') ?>" title="<?php echo (in_array($_candidate_id, $viewed_candidates) ? esc_html__('Viewed', 'wp-jobsearch') : esc_html__('Unviewed', 'wp-jobsearch')) ?>"><a href="<?php echo add_query_arg(array('job_id' => $_job_id, 'employer_id' => $employer_id, 'action' => 'preview_profile'), get_permalink($_candidate_id)) ?>"><i class="careerfy-icon careerfy-view"></i></a></li>
+                                                        <?php
+                                                        if ($candidate_phone != '') {
+                                                            ?>
+                                                            <li><a class="jobsearch-apppli-tooltip" href="tel:<?php echo ($candidate_phone) ?>" title="<?php printf(esc_html__('Phone: %s', 'wp-jobsearch'), $candidate_phone) ?>"><i class="careerfy-icon careerfy-technology"></i></a></li>
+                                                            <?php
+                                                        }
+                                                        if (!in_array($_candidate_id, $job_reject_int_list)) {
+
+                                                            if (in_array($_candidate_id, $job_short_int_list)) {
+                                                                ?>
+                                                                <li><a href="javascript:void(0);" class="shortlist-cand-to-intrview ap-shortlist-btn"><i class="careerfy-icon careerfy-heart"></i> <?php esc_html_e('Shortlisted', 'wp-jobsearch') ?></a></li>
+                                                                <?php
+                                                            } else {
+                                                                ?>
+                                                                <li><a href="javascript:void(0);" class="shortlist-cand-to-intrview ap-shortlist-btn ajax-enable" data-jid="<?php echo absint($_job_id); ?>" data-cid="<?php echo absint($_candidate_id); ?>"><i class="careerfy-icon careerfy-heart"></i> <?php esc_html_e('Shortlist', 'wp-jobsearch') ?> <span class="app-loader"></span></a></li>
+                                                                <?php
+                                                            }
+                                                        }
+                                                        ?>
+                                                    </ul>
+                                                </div>
+
+                                                <ul class="short-lidown-icons">
+                                                    <?php
+                                                    $multiple_cv_files_allow = isset($jobsearch_plugin_options['multiple_cv_uploads']) ? $jobsearch_plugin_options['multiple_cv_uploads'] : '';
+                                                    $candidate_cv_file = get_post_meta($_candidate_id, 'candidate_cv_file', true);
+
+                                                    if ($multiple_cv_files_allow == 'on') {
+                                                        $ca_at_cv_files = get_post_meta($_candidate_id, 'candidate_cv_files', true);
+                                                        if (!empty($ca_at_cv_files)) {
+                                                            ?>
+                                                            <li class="down-cv-donlod"><a href="<?php echo apply_filters('jobsearch_user_attach_cv_file_url', '', $_candidate_id, $_job_id) ?>" class="jobsearch-apppli-tooltip" title="<?php esc_html_e('Download CV', 'wp-jobsearch') ?>" download="<?php echo apply_filters('jobsearch_user_attach_cv_file_title', '', $_candidate_id, $_job_id) ?>"><i class="careerfy-icon careerfy-download-arrow"></i></a></li>
+                                                            <?php
+                                                        }
+                                                    } else if (!empty($candidate_cv_file)) {
+                                                        $file_attach_id = isset($candidate_cv_file['file_id']) ? $candidate_cv_file['file_id'] : '';
+                                                        $file_url = isset($candidate_cv_file['file_url']) ? $candidate_cv_file['file_url'] : '';
+
+                                                        $cv_file_title = get_the_title($file_attach_id);
+                                                        ?>
+                                                        <li class="down-cv-donlod"><a href="<?php echo ($file_url) ?>" class="jobsearch-apppli-tooltip" title="<?php esc_html_e('Download CV', 'wp-jobsearch') ?>" download="<?php echo ($cv_file_title) ?>"><i class="careerfy-icon careerfy-download-arrow"></i></a></li>
                                                         <?php
                                                     }
+                                                    echo apply_filters('employer_dash_apps_acts_list_after_download_link', '', $_candidate_id, $_job_id);
+                                                    ?>
+                                                    <li class="down-emial-candcon">
+                                                        <a href="javascript:void(0);" class="jobsearch-apppli-tooltip jobsearch-modelemail-btn-<?php echo ($send_message_form_rand) ?>" title="<?php esc_html_e('Email to Candidate', 'wp-jobsearch') ?>"><i class="fa fa-envelope-o"></i></a>
+                                                        <?php
+                                                        $popup_args = array('p_job_id' => $_job_id, 'cand_id' => $_candidate_id, 'p_emp_id' => $employer_id, 'p_masg_rand' => $send_message_form_rand);
+                                                        add_action('wp_footer', function () use ($popup_args) {
 
-                                                    if (in_array($_candidate_id, $viewed_candidates)) {
+                                                            extract(shortcode_atts(array(
+                                                                'p_job_id' => '',
+                                                                'p_emp_id' => '',
+                                                                'cand_id' => '',
+                                                                'p_masg_rand' => ''
+                                                                            ), $popup_args));
+                                                            ?>
+                                                            <div class="jobsearch-modal fade" id="JobSearchModalSendEmail<?php echo ($p_masg_rand) ?>">
+                                                                <div class="modal-inner-area">&nbsp;</div>
+                                                                <div class="modal-content-area">
+                                                                    <div class="modal-box-area">
+                                                                        <span class="modal-close"><i class="fa fa-times"></i></span>
+                                                                        <div class="jobsearch-send-message-form">
+                                                                            <form method="post" id="jobsearch_send_email_form<?php echo esc_html($p_masg_rand); ?>">
+                                                                                <div class="jobsearch-user-form">
+                                                                                    <ul class="email-fields-list">
+                                                                                        <li>
+                                                                                            <label>
+                                                                                                <?php echo esc_html__('Subject', 'wp-jobsearch'); ?>:
+                                                                                            </label>
+                                                                                            <div class="input-field">
+                                                                                                <input type="text" name="send_message_subject" value="" />
+                                                                                            </div>
+                                                                                        </li>
+                                                                                        <li>
+                                                                                            <label>
+                                                                                                <?php echo esc_html__('Message', 'wp-jobsearch'); ?>:
+                                                                                            </label>
+                                                                                            <div class="input-field">
+                                                                                                <textarea name="send_message_content"></textarea>
+                                                                                            </div>
+                                                                                        </li>
+                                                                                        <li>
+                                                                                            <div class="input-field-submit">
+                                                                                                <input type="submit" class="applicantto-email-submit-btn" data-jid="<?php echo absint($p_job_id); ?>" data-eid="<?php echo absint($p_emp_id); ?>" data-cid="<?php echo absint($cand_id); ?>" data-randid="<?php echo esc_html($p_masg_rand); ?>" name="send_message_content" value="Send"/>
+                                                                                                <span class="loader-box loader-box-<?php echo esc_html($p_masg_rand); ?>"></span>
+                                                                                            </div>
+                                                                                            <?php jobsearch_terms_and_con_link_txt(); ?>
+                                                                                        </li>
+                                                                                    </ul> 
+                                                                                    <div class="message-box message-box-<?php echo esc_html($p_masg_rand); ?>" style="display:none;"></div>
+                                                                                </div>
+                                                                            </form>    
+                                                                        </div>
+
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <?php
+                                                        }, 11, 1);
                                                         ?>
-                                                        <small class="profile-view viewed"><?php esc_html_e('(Viewed)', 'wp-jobsearch') ?></small>
+                                                    </li>
+                                                    <?php
+                                                    if (in_array($_candidate_id, $job_reject_int_list)) {
+                                                        ?>
+                                                        <li class="down-cand-rejct">
+                                                            <a href="javascript:void(0);" class="undoreject-cand-to-list jobsearch-apppli-tooltip ajax-enable" data-jid="<?php echo absint($_job_id); ?>" data-cid="<?php echo absint($_candidate_id); ?>" title="<?php esc_html_e('Undo Reject', 'wp-jobsearch') ?>"><i class="fa fa-undo"></i> <span class="app-loader"></span></a>
+                                                        </li>
                                                         <?php
                                                     } else {
                                                         ?>
-                                                        <small class="profile-view unviewed"><?php esc_html_e('(Unviewed)', 'wp-jobsearch') ?></small>
+                                                        <li class="down-cand-rejct"><a href="javascript:void(0);" class="reject-cand-to-intrview jobsearch-apppli-tooltip ajax-enable" data-jid="<?php echo absint($_job_id); ?>" data-cid="<?php echo absint($_candidate_id); ?>" title="<?php esc_html_e('Reject', 'wp-jobsearch') ?>"><i class="fa fa-ban"></i> <span class="app-loader"></span></a></li>
                                                         <?php
                                                     }
-                                                    echo apply_filters('jobsearch_applicants_list_before_title', '', $_candidate_id, $_job_id);
                                                     ?>
-                                                    <h2>
-                                                        <a href="<?php echo get_permalink($_candidate_id) ?>"><?php echo get_the_title($_candidate_id) ?></a>
-                                                        <?php
-                                                        if ($candidate_age != '') {
-                                                            ?>
-                                                            <small><?php echo apply_filters('jobsearch_dash_applicants_age_html', sprintf(esc_html__('(Age: %s years)', 'wp-jobsearch'), $candidate_age)) ?></small>
-                                                            <?php
-                                                        }
-                                                        if ($candidate_phone != '') {
-                                                            ?>
-                                                            <small><?php printf(esc_html__('Phone: %s', 'wp-jobsearch'), $candidate_phone) ?></small>
-                                                            <?php
-                                                        }
-                                                        ?>
-                                                    </h2>
-                                                    <ul>
-                                                        <?php
-                                                        if ($candidate_salary != '') {
-                                                            ?>
-                                                            <li><i class="fa fa-money"></i> <?php printf(esc_html__('Salary: %s', 'wp-jobsearch'), $candidate_salary) ?></li>
-                                                            <?php
-                                                        }
-                                                        if ($candidate_city_title != '' && $all_location_allow == 'on') {
-                                                            ?>
-                                                            <li><i class="fa fa-map-marker"></i> <?php echo ($candidate_city_title) ?></li>
-                                                            <?php
-                                                        }
-                                                        if ($candidate_sector != '') {
-                                                            ?>
-                                                            <li><i class="jobsearch-icon jobsearch-filter-tool-black-shape"></i> <a><?php echo ($candidate_sector) ?></a></li>
-                                                            <?php
-                                                        }
-                                                        ?>
-                                                    </ul>
+                                                    <li class="down-cand-dtrash"><a href="javascript:void(0);" class="delete-cand-from-job jobsearch-apppli-tooltip ajax-enable" data-jid="<?php echo absint($_job_id); ?>" data-cid="<?php echo absint($_candidate_id); ?>" title="<?php esc_html_e('Delete', 'wp-jobsearch') ?>"><i class="fa fa-trash"></i> <span class="app-loader"></span></a></li>
+                                                </ul>
+                                            </div>
+                                        </li>
+                                        <?php
+                                    } else {
+                                        ?>
+                                        <li class="jobsearch-column-12">
+                                            <script>
+                                                jQuery(document).on('click', '.jobsearch-modelemail-btn-<?php echo ($send_message_form_rand) ?>', function () {
+                                                    jobsearch_modal_popup_open('JobSearchModalSendEmail<?php echo ($send_message_form_rand) ?>');
+                                                });
+                                            </script>
+                                            <div class="jobsearch-applied-jobs-wrap">
+                                                <div class="candidate-select-box">
+                                                    <input type="checkbox" name="app_candidate_sel[]" id="app_candidate_sel_<?php echo $_candidate_id ?>" value="<?php echo $_candidate_id ?>">
+                                                    <label for="app_candidate_sel_<?php echo $_candidate_id ?>"></label>
                                                 </div>
-                                                <div class="jobsearch-applied-job-btns">
-                                                    <ul>
-                                                        <li>
-                                                            <a href="<?php echo add_query_arg(array('job_id' => $_job_id, 'employer_id' => $employer_id, 'action' => 'preview_profile'), get_permalink($_candidate_id)) ?>" class="preview-candidate-profile"><i class="fa fa-eye"></i> <?php esc_html_e('Preview', 'wp-jobsearch') ?></a>
-                                                        </li>
-                                                        <li>
-                                                            <div class="candidate-more-acts-con">
-                                                                <a href="javascript:void(0);" class="more-actions"><?php esc_html_e('Actions', 'wp-jobsearch') ?> <i class="fa fa-angle-down"></i></a>
-                                                                <ul>
-                                                                    <?php
-                                                                    $multiple_cv_files_allow = isset($jobsearch_plugin_options['multiple_cv_uploads']) ? $jobsearch_plugin_options['multiple_cv_uploads'] : '';
-                                                                    $candidate_cv_file = get_post_meta($_candidate_id, 'candidate_cv_file', true);
+                                                <a class="jobsearch-applied-jobs-thumb">
+                                                    <img src="<?php echo ($user_def_avatar_url) ?>" alt="">
+                                                </a>
+                                                <div class="jobsearch-applied-jobs-text">
+                                                    <div class="jobsearch-applied-jobs-left">
+                                                        <?php
+                                                        if ($candidate_jobtitle != '') {
+                                                            ?>
+                                                            <span> <?php echo ($candidate_jobtitle) ?></span>
+                                                            <?php
+                                                        }
 
-                                                                    if ($multiple_cv_files_allow == 'on') {
-                                                                        $ca_at_cv_files = get_post_meta($_candidate_id, 'candidate_cv_files', true);
-                                                                        if (!empty($ca_at_cv_files)) {
+                                                        if (in_array($_candidate_id, $viewed_candidates)) {
+                                                            ?>
+                                                            <small class="profile-view viewed"><?php esc_html_e('(Viewed)', 'wp-jobsearch') ?></small>
+                                                            <?php
+                                                        } else {
+                                                            ?>
+                                                            <small class="profile-view unviewed"><?php esc_html_e('(Unviewed)', 'wp-jobsearch') ?></small>
+                                                            <?php
+                                                        }
+                                                        echo apply_filters('jobsearch_applicants_list_before_title', '', $_candidate_id, $_job_id);
+                                                        ?>
+                                                        <h2>
+                                                            <a href="<?php echo get_permalink($_candidate_id) ?>"><?php echo get_the_title($_candidate_id) ?></a>
+                                                            <?php
+                                                            if ($candidate_age != '') {
+                                                                ?>
+                                                                <small><?php echo apply_filters('jobsearch_dash_applicants_age_html', sprintf(esc_html__('(Age: %s years)', 'wp-jobsearch'), $candidate_age)) ?></small>
+                                                                <?php
+                                                            }
+                                                            if ($candidate_phone != '') {
+                                                                ?>
+                                                                <small><?php printf(esc_html__('Phone: %s', 'wp-jobsearch'), $candidate_phone) ?></small>
+                                                                <?php
+                                                            }
+                                                            ?>
+                                                        </h2>
+                                                        <ul>
+                                                            <?php
+                                                            if ($candidate_salary != '') {
+                                                                ?>
+                                                                <li><i class="fa fa-money"></i> <?php printf(esc_html__('Salary: %s', 'wp-jobsearch'), $candidate_salary) ?></li>
+                                                                <?php
+                                                            }
+                                                            if ($candidate_city_title != '' && $all_location_allow == 'on') {
+                                                                ?>
+                                                                <li><i class="fa fa-map-marker"></i> <?php echo ($candidate_city_title) ?></li>
+                                                                <?php
+                                                            }
+                                                            if ($candidate_sector != '') {
+                                                                ?>
+                                                                <li><i class="jobsearch-icon jobsearch-filter-tool-black-shape"></i> <a><?php echo ($candidate_sector) ?></a></li>
+                                                                <?php
+                                                            }
+                                                            ?>
+                                                        </ul>
+                                                    </div>
+                                                    <div class="jobsearch-applied-job-btns">
+                                                        <ul>
+                                                            <li>
+                                                                <a href="<?php echo add_query_arg(array('job_id' => $_job_id, 'employer_id' => $employer_id, 'action' => 'preview_profile'), get_permalink($_candidate_id)) ?>" class="preview-candidate-profile"><i class="fa fa-eye"></i> <?php esc_html_e('Preview', 'wp-jobsearch') ?></a>
+                                                            </li>
+                                                            <li>
+                                                                <div class="candidate-more-acts-con">
+                                                                    <a href="javascript:void(0);" class="more-actions"><?php esc_html_e('Actions', 'wp-jobsearch') ?> <i class="fa fa-angle-down"></i></a>
+                                                                    <ul>
+                                                                        <?php
+                                                                        $multiple_cv_files_allow = isset($jobsearch_plugin_options['multiple_cv_uploads']) ? $jobsearch_plugin_options['multiple_cv_uploads'] : '';
+                                                                        $candidate_cv_file = get_post_meta($_candidate_id, 'candidate_cv_file', true);
+
+                                                                        if ($multiple_cv_files_allow == 'on') {
+                                                                            $ca_at_cv_files = get_post_meta($_candidate_id, 'candidate_cv_files', true);
+                                                                            if (!empty($ca_at_cv_files)) {
+                                                                                ?>
+                                                                                <li><a href="<?php echo apply_filters('jobsearch_user_attach_cv_file_url', '', $_candidate_id, $_job_id) ?>" download="<?php echo apply_filters('jobsearch_user_attach_cv_file_title', '', $_candidate_id, $_job_id) ?>"><?php esc_html_e('Download CV', 'wp-jobsearch') ?></a></li>
+                                                                                <?php
+                                                                            }
+                                                                        } else if (!empty($candidate_cv_file)) {
+                                                                            $file_attach_id = isset($candidate_cv_file['file_id']) ? $candidate_cv_file['file_id'] : '';
+                                                                            $file_url = isset($candidate_cv_file['file_url']) ? $candidate_cv_file['file_url'] : '';
+
+                                                                            $cv_file_title = get_the_title($file_attach_id);
                                                                             ?>
-                                                                            <li><a href="<?php echo apply_filters('jobsearch_user_attach_cv_file_url', '', $_candidate_id, $_job_id) ?>" download="<?php echo apply_filters('jobsearch_user_attach_cv_file_title', '', $_candidate_id, $_job_id) ?>"><?php esc_html_e('Download CV', 'wp-jobsearch') ?></a></li>
+                                                                            <li><a href="<?php echo ($file_url) ?>" download="<?php echo ($cv_file_title) ?>"><?php esc_html_e('Download CV', 'wp-jobsearch') ?></a></li>
                                                                             <?php
                                                                         }
-                                                                    } else if (!empty($candidate_cv_file)) {
-                                                                        $file_attach_id = isset($candidate_cv_file['file_id']) ? $candidate_cv_file['file_id'] : '';
-                                                                        $file_url = isset($candidate_cv_file['file_url']) ? $candidate_cv_file['file_url'] : '';
-
-                                                                        $cv_file_title = get_the_title($file_attach_id);
+                                                                        echo apply_filters('employer_dash_apps_acts_list_after_download_link', '', $_candidate_id, $_job_id);
                                                                         ?>
-                                                                        <li><a href="<?php echo ($file_url) ?>" download="<?php echo ($cv_file_title) ?>"><?php esc_html_e('Download CV', 'wp-jobsearch') ?></a></li>
-                                                                        <?php
-                                                                    }
-                                                                    echo apply_filters('employer_dash_apps_acts_list_after_download_link', '', $_candidate_id, $_job_id);
-                                                                    ?>
-                                                                    <li>
-                                                                        <a href="javascript:void(0);" class="jobsearch-modelemail-btn-<?php echo ($send_message_form_rand) ?>"><?php esc_html_e('Email to Candidate', 'wp-jobsearch') ?></a>
-                                                                        <?php
-                                                                        $popup_args = array('p_job_id' => $_job_id, 'cand_id' => $_candidate_id, 'p_emp_id' => $employer_id, 'p_masg_rand' => $send_message_form_rand);
-                                                                        add_action('wp_footer', function () use ($popup_args) {
+                                                                        <li>
+                                                                            <a href="javascript:void(0);" class="jobsearch-modelemail-btn-<?php echo ($send_message_form_rand) ?>"><?php esc_html_e('Email to Candidate', 'wp-jobsearch') ?></a>
+                                                                            <?php
+                                                                            $popup_args = array('p_job_id' => $_job_id, 'cand_id' => $_candidate_id, 'p_emp_id' => $employer_id, 'p_masg_rand' => $send_message_form_rand);
+                                                                            add_action('wp_footer', function () use ($popup_args) {
 
-                                                                            extract(shortcode_atts(array(
-                                                                                'p_job_id' => '',
-                                                                                'p_emp_id' => '',
-                                                                                'cand_id' => '',
-                                                                                'p_masg_rand' => ''
-                                                                                            ), $popup_args));
-                                                                            ?>
-                                                                            <div class="jobsearch-modal fade" id="JobSearchModalSendEmail<?php echo ($p_masg_rand) ?>">
-                                                                                <div class="modal-inner-area">&nbsp;</div>
-                                                                                <div class="modal-content-area">
-                                                                                    <div class="modal-box-area">
-                                                                                        <span class="modal-close"><i class="fa fa-times"></i></span>
-                                                                                        <div class="jobsearch-send-message-form">
-                                                                                            <form method="post" id="jobsearch_send_email_form<?php echo esc_html($p_masg_rand); ?>">
-                                                                                                <div class="jobsearch-user-form">
-                                                                                                    <ul class="email-fields-list">
-                                                                                                        <li>
-                                                                                                            <label>
-                                                                                                                <?php echo esc_html__('Subject', 'wp-jobsearch'); ?>:
-                                                                                                            </label>
-                                                                                                            <div class="input-field">
-                                                                                                                <input type="text" name="send_message_subject" value="" />
-                                                                                                            </div>
-                                                                                                        </li>
-                                                                                                        <li>
-                                                                                                            <label>
-                                                                                                                <?php echo esc_html__('Message', 'wp-jobsearch'); ?>:
-                                                                                                            </label>
-                                                                                                            <div class="input-field">
-                                                                                                                <textarea name="send_message_content"></textarea>
-                                                                                                            </div>
-                                                                                                        </li>
-                                                                                                        <li>
-                                                                                                            <div class="input-field-submit">
-                                                                                                                <input type="submit" class="applicantto-email-submit-btn" data-jid="<?php echo absint($p_job_id); ?>" data-eid="<?php echo absint($p_emp_id); ?>" data-cid="<?php echo absint($cand_id); ?>" data-randid="<?php echo esc_html($p_masg_rand); ?>" name="send_message_content" value="Send"/>
-                                                                                                                <span class="loader-box loader-box-<?php echo esc_html($p_masg_rand); ?>"></span>
-                                                                                                            </div>
-                                                                                                            <?php jobsearch_terms_and_con_link_txt(); ?>
-                                                                                                        </li>
-                                                                                                    </ul> 
-                                                                                                    <div class="message-box message-box-<?php echo esc_html($p_masg_rand); ?>" style="display:none;"></div>
-                                                                                                </div>
-                                                                                            </form>    
+                                                                                extract(shortcode_atts(array(
+                                                                                    'p_job_id' => '',
+                                                                                    'p_emp_id' => '',
+                                                                                    'cand_id' => '',
+                                                                                    'p_masg_rand' => ''
+                                                                                                ), $popup_args));
+                                                                                ?>
+                                                                                <div class="jobsearch-modal fade" id="JobSearchModalSendEmail<?php echo ($p_masg_rand) ?>">
+                                                                                    <div class="modal-inner-area">&nbsp;</div>
+                                                                                    <div class="modal-content-area">
+                                                                                        <div class="modal-box-area">
+                                                                                            <span class="modal-close"><i class="fa fa-times"></i></span>
+                                                                                            <div class="jobsearch-send-message-form">
+                                                                                                <form method="post" id="jobsearch_send_email_form<?php echo esc_html($p_masg_rand); ?>">
+                                                                                                    <div class="jobsearch-user-form">
+                                                                                                        <ul class="email-fields-list">
+                                                                                                            <li>
+                                                                                                                <label>
+                                                                                                                    <?php echo esc_html__('Subject', 'wp-jobsearch'); ?>:
+                                                                                                                </label>
+                                                                                                                <div class="input-field">
+                                                                                                                    <input type="text" name="send_message_subject" value="" />
+                                                                                                                </div>
+                                                                                                            </li>
+                                                                                                            <li>
+                                                                                                                <label>
+                                                                                                                    <?php echo esc_html__('Message', 'wp-jobsearch'); ?>:
+                                                                                                                </label>
+                                                                                                                <div class="input-field">
+                                                                                                                    <textarea name="send_message_content"></textarea>
+                                                                                                                </div>
+                                                                                                            </li>
+                                                                                                            <li>
+                                                                                                                <div class="input-field-submit">
+                                                                                                                    <input type="submit" class="applicantto-email-submit-btn" data-jid="<?php echo absint($p_job_id); ?>" data-eid="<?php echo absint($p_emp_id); ?>" data-cid="<?php echo absint($cand_id); ?>" data-randid="<?php echo esc_html($p_masg_rand); ?>" name="send_message_content" value="Send"/>
+                                                                                                                    <span class="loader-box loader-box-<?php echo esc_html($p_masg_rand); ?>"></span>
+                                                                                                                </div>
+                                                                                                                <?php jobsearch_terms_and_con_link_txt(); ?>
+                                                                                                            </li>
+                                                                                                        </ul> 
+                                                                                                        <div class="message-box message-box-<?php echo esc_html($p_masg_rand); ?>" style="display:none;"></div>
+                                                                                                    </div>
+                                                                                                </form>    
+                                                                                            </div>
+
                                                                                         </div>
-
                                                                                     </div>
                                                                                 </div>
-                                                                            </div>
-                                                                            <?php
-                                                                        }, 11, 1);
-                                                                        ?>
-                                                                    </li>
-                                                                    <li>
-                                                                        <?php
-                                                                        if (in_array($_candidate_id, $job_short_int_list)) {
+                                                                                <?php
+                                                                            }, 11, 1);
                                                                             ?>
-                                                                            <a href="javascript:void(0);" class="shortlist-cand-to-intrview"><?php esc_html_e('Shortlisted', 'wp-jobsearch') ?></a>
-                                                                            <?php
-                                                                        } else {
-                                                                            ?>
-                                                                            <a href="javascript:void(0);" class="shortlist-cand-to-intrview ajax-enable" data-jid="<?php echo absint($_job_id); ?>" data-cid="<?php echo absint($_candidate_id); ?>"><?php esc_html_e('Shortlist for Interview', 'wp-jobsearch') ?> <span class="app-loader"></span></a>
-                                                                            <?php
-                                                                        }
-                                                                        ?>
-                                                                    </li>
-                                                                    <li>
+                                                                        </li>
                                                                         <?php
                                                                         if (in_array($_candidate_id, $job_reject_int_list)) {
                                                                             ?>
-                                                                            <a href="javascript:void(0);" class="reject-cand-to-intrview"><?php esc_html_e('Rejected', 'wp-jobsearch') ?></a>
+                                                                            <li>
+                                                                                <a href="javascript:void(0);" class="undoreject-cand-to-list ajax-enable" data-jid="<?php echo absint($_job_id); ?>" data-cid="<?php echo absint($_candidate_id); ?>"><?php esc_html_e('Undo Reject', 'wp-jobsearch') ?> <span class="app-loader"></span></a>
+                                                                            </li>
                                                                             <?php
                                                                         } else {
                                                                             ?>
-                                                                            <a href="javascript:void(0);" class="reject-cand-to-intrview ajax-enable" data-jid="<?php echo absint($_job_id); ?>" data-cid="<?php echo absint($_candidate_id); ?>"><?php esc_html_e('Reject', 'wp-jobsearch') ?> <span class="app-loader"></span></a>
+                                                                            <li>
+                                                                                <?php
+                                                                                if (in_array($_candidate_id, $job_short_int_list)) {
+                                                                                    ?>
+                                                                                    <a href="javascript:void(0);" class="shortlist-cand-to-intrview"><?php esc_html_e('Shortlisted', 'wp-jobsearch') ?></a>
+                                                                                    <?php
+                                                                                } else {
+                                                                                    ?>
+                                                                                    <a href="javascript:void(0);" class="shortlist-cand-to-intrview ajax-enable" data-jid="<?php echo absint($_job_id); ?>" data-cid="<?php echo absint($_candidate_id); ?>"><?php esc_html_e('Shortlist for Interview', 'wp-jobsearch') ?> <span class="app-loader"></span></a>
+                                                                                    <?php
+                                                                                }
+                                                                                ?>
+                                                                            </li>
+                                                                            <li>
+                                                                                <?php
+                                                                                if (in_array($_candidate_id, $job_reject_int_list)) {
+                                                                                    ?>
+                                                                                    <a href="javascript:void(0);" class="reject-cand-to-intrview"><?php esc_html_e('Rejected', 'wp-jobsearch') ?></a>
+                                                                                    <?php
+                                                                                } else {
+                                                                                    ?>
+                                                                                    <a href="javascript:void(0);" class="reject-cand-to-intrview ajax-enable" data-jid="<?php echo absint($_job_id); ?>" data-cid="<?php echo absint($_candidate_id); ?>"><?php esc_html_e('Reject', 'wp-jobsearch') ?> <span class="app-loader"></span></a>
+                                                                                    <?php
+                                                                                }
+                                                                                ?>
+                                                                            </li>
                                                                             <?php
                                                                         }
                                                                         ?>
-                                                                    </li>
-                                                                    <li>
-                                                                        <a href="javascript:void(0);" class="delete-cand-from-job ajax-enable" data-jid="<?php echo absint($_job_id); ?>" data-cid="<?php echo absint($_candidate_id); ?>"><?php esc_html_e('Delete', 'wp-jobsearch') ?> <span class="app-loader"></span></a>
-                                                                    </li>
-                                                                </ul>
-                                                            </div>
-                                                        </li>
-                                                    </ul>
+                                                                        <li>
+                                                                            <a href="javascript:void(0);" class="delete-cand-from-job ajax-enable" data-jid="<?php echo absint($_job_id); ?>" data-cid="<?php echo absint($_candidate_id); ?>"><?php esc_html_e('Delete', 'wp-jobsearch') ?> <span class="app-loader"></span></a>
+                                                                        </li>
+                                                                    </ul>
+                                                                </div>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </li>
-                                    <?php
+                                        </li>
+                                        <?php
+                                    }
                                 }
                                 ?>
                             </ul>
@@ -626,7 +814,7 @@ if ($employer_id > 0) {
                                             </ul>
                                         </div>
 
-                                        <div class="jobsearch-table-cell"><a <?php echo ($job_applicants_count > 0 ? 'href="' . add_query_arg(array('tab' => 'manage-jobs', 'view' => 'applicants', 'job_id' => $job_id), $page_url) . '"' : '') ?> class="jobsearch-managejobs-appli"><?php printf(__('%s Application(s)', 'wp-jobsearch'), $job_applicants_count) ?></a></div>
+                                        <div class="jobsearch-table-cell"><a <?php echo ('href="' . add_query_arg(array('tab' => 'manage-jobs', 'view' => 'applicants', 'job_id' => $job_id), $page_url) . '"') ?> class="jobsearch-managejobs-appli"><?php printf(__('%s Application(s)', 'wp-jobsearch'), $job_applicants_count) ?></a></div>
                                         <div class="jobsearch-table-cell">
                                             <?php
                                             if ($job_is_feature == 'on') {

@@ -19,10 +19,12 @@ $user_displayname = apply_filters('jobsearch_user_display_name', $user_displayna
 $user_is_candidate = jobsearch_user_is_candidate($user_id);
 $user_is_employer = jobsearch_user_is_employer($user_id);
 
+$user_has_cimg = false;
 if ($user_is_employer) {
     $employer_id = jobsearch_get_user_employer_id($user_id);
     $user_avatar_id = get_post_thumbnail_id($employer_id);
     if ($user_avatar_id > 0) {
+        $user_has_cimg = true;
         $user_thumbnail_image = wp_get_attachment_image_src($user_avatar_id, 'thumbnail');
         $user_def_avatar_url = isset($user_thumbnail_image[0]) && esc_url($user_thumbnail_image[0]) != '' ? $user_thumbnail_image[0] : '';
     }
@@ -32,6 +34,7 @@ if ($user_is_employer) {
     $candidate_id = jobsearch_get_user_candidate_id($user_id);
     $user_avatar_id = get_post_thumbnail_id($candidate_id);
     if ($user_avatar_id > 0) {
+        $user_has_cimg = true;
         $user_thumbnail_image = wp_get_attachment_image_src($user_avatar_id, 'thumbnail');
         $user_def_avatar_url = isset($user_thumbnail_image[0]) && esc_url($user_thumbnail_image[0]) != '' ? $user_thumbnail_image[0] : '';
     }
@@ -64,11 +67,17 @@ if ($user_is_employer) {
                         wp_enqueue_script('jobsearch-circle-progressbar');
                     }
                     ?>
-                    <a id="com-img-holder" href="<?php echo ($page_url) ?>" class="employer-dashboard-thumb"><?php if ($candidate_skills == 'on') { ?><div id="circle"><?php } ?><img src="<?php echo ($user_def_avatar_url) ?>" alt="" style="max-width: 132px;"><?php if ($candidate_skills == 'on') { ?></div><?php } ?></a>
+                    <a href="javascript:void(0);" class="user-dashthumb-remove" data-uid="<?php echo ($user_id) ?>" <?php echo ($user_has_cimg ? '' : 'style="display: none;"') ?>><i class="fa fa-times"></i></a>
+                    <a id="com-img-holder" href="<?php echo ($page_url) ?>" class="employer-dashboard-thumb">
+                        <?php if ($candidate_skills == 'on') { ?><div id="circle"><?php } ?><img src="<?php echo ($user_def_avatar_url) ?>" alt="" style="max-width: 132px;"><?php if ($candidate_skills == 'on') { ?></div><?php } ?>
+                    </a>
                     <?php
                 } else {
                     ?>
-                    <a id="com-img-holder" href="<?php echo ($page_url) ?>" class="employer-dashboard-thumb"><img src="<?php echo ($user_def_avatar_url) ?>" alt="" style="max-width: 132px;"></a>
+                    <a href="javascript:void(0);" class="user-dashthumb-remove" data-uid="<?php echo ($user_id) ?>" <?php echo ($user_has_cimg ? '' : 'style="display: none;"') ?>><i class="fa fa-times"></i></a>
+                    <a id="com-img-holder" href="<?php echo ($page_url) ?>" class="employer-dashboard-thumb">
+                        <img src="<?php echo ($user_def_avatar_url) ?>" alt="" style="max-width: 132px;">
+                    </a>
                     <?php
                 }
                 $uplod_txt = '';
@@ -164,7 +173,7 @@ if ($user_is_employer) {
                                                                 </div>
                                                                 <div class="minimum-percent">
                                                                     <span><?php esc_html_e('Minimum Required', 'wp-jobsearch') ?></span>
-                                                                    <small><?php echo ($candidate_min_skill) ?>%</small>
+                                                                    <small><?php echo ($candidate_min_skill) ?>% </small>
                                                                 </div>
                                                             </div>
                                                             <div class="profile-improve-con">
@@ -249,6 +258,18 @@ if ($user_is_employer) {
                                 <?php esc_html_e('Packages', 'wp-jobsearch') ?>
                             </a>
                         </li>
+                        <?php
+                        if (class_exists('WC_Subscription')) {
+                            ?>
+                            <li<?php echo ($get_tab == 'user-subscriptions' ? ' class="active"' : '') ?>>
+                                <a href="<?php echo add_query_arg(array('tab' => 'user-subscriptions'), $page_url) ?>">
+                                    <i class="jobsearch-icon jobsearch-business"></i>
+                                    <?php esc_html_e('Subscriptions', 'wp-jobsearch') ?>
+                                </a>
+                            </li>
+                            <?php
+                        }
+                        ?>
                         <li<?php echo ($get_tab == 'user-transactions' ? ' class="active"' : '') ?>>
                             <a href="<?php echo add_query_arg(array('tab' => 'user-transactions'), $page_url) ?>">
                                 <i class="jobsearch-icon jobsearch-salary"></i>
@@ -311,6 +332,18 @@ if ($user_is_employer) {
                                 <?php esc_html_e('Packages', 'wp-jobsearch') ?>
                             </a>
                         </li>
+                        <?php
+                        if (class_exists('WC_Subscription')) {
+                            ?>
+                            <li<?php echo ($get_tab == 'user-subscriptions' ? ' class="active"' : '') ?>>
+                                <a href="<?php echo add_query_arg(array('tab' => 'user-subscriptions'), $page_url) ?>">
+                                    <i class="jobsearch-icon jobsearch-business"></i>
+                                    <?php esc_html_e('Subscriptions', 'wp-jobsearch') ?>
+                                </a>
+                            </li>
+                            <?php
+                        }
+                        ?>
                         <li<?php echo ($get_tab == 'user-transactions' ? ' class="active"' : '') ?>>
                             <a href="<?php echo add_query_arg(array('tab' => 'user-transactions'), $page_url) ?>">
                                 <i class="jobsearch-icon jobsearch-salary"></i>

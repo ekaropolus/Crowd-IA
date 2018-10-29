@@ -29,7 +29,7 @@ if ($candidate_id > 0) {
                 'post_status' => 'wc-completed',
                 'order' => 'DESC',
                 'orderby' => 'ID',
-                'meta_query' => array(
+                'meta_query' => apply_filters('jobsearch_cand_dash_pkgs_list_tab_mquery', array(
                     array(
                         'key' => 'jobsearch_order_attach_with',
                         'value' => 'package',
@@ -45,7 +45,7 @@ if ($candidate_id > 0) {
                         'value' => $user_id,
                         'compare' => '=',
                     ),
-                ),
+                )),
             );
             $pkgs_query = new WP_Query($args);
             $total_pkgs = $pkgs_query->found_posts;

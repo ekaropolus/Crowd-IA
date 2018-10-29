@@ -15,6 +15,8 @@ $page_num = isset($_GET['page_num']) ? $_GET['page_num'] : 1;
 
 $all_location_allow = isset($jobsearch_plugin_options['all_location_allow']) ? $jobsearch_plugin_options['all_location_allow'] : '';
 
+$user_stats_switch = isset($jobsearch_plugin_options['user_stats_switch']) ? $jobsearch_plugin_options['user_stats_switch'] : '';
+
 if ($employer_id > 0) {
 
     $rand_id = rand(1000000, 9999999);
@@ -85,82 +87,87 @@ if ($employer_id > 0) {
     }
     ?>
     <div class="jobsearch-employer-dasboard">
-        <div class="jobsearch-employer-box-section">
-
-            <div class="jobsearch-profile-title">
-                <h2><?php esc_html_e('Applications statistics', 'wp-jobsearch') ?></h2>
-            </div>
-            <div class="jobsearch-stats-list">
-                <ul>
-                    <li>
-                        <div class="jobsearch-stats-list-wrap">
-                            <h6><?php esc_html_e('Posted jobs', 'wp-jobsearch') ?></h6>
-                            <span><?php echo absint($total_jobs) ?></span>
-                            <small><?php esc_html_e('to find talent', 'wp-jobsearch') ?></small>
-                        </div>
-                    </li>
-                    <li>
-                        <div class="jobsearch-stats-list-wrap green">
-                            <h6><?php esc_html_e('Reviewed', 'wp-jobsearch') ?></h6>
-                            <span><?php echo absint($overall_viewed_cands) ?></span>
-                            <small><?php esc_html_e('CVs against opportunities', 'wp-jobsearch') ?></small>
-                        </div>
-                    </li>
-                    <li>
-                        <div class="jobsearch-stats-list-wrap light-blue">
-                            <h6><?php esc_html_e('Shortlisted', 'wp-jobsearch') ?></h6>
-                            <span><?php echo absint($employer_resumes_count) ?></span>
-                            <small><?php esc_html_e('candidates against jobs', 'wp-jobsearch') ?></small>
-                        </div>
-                    </li>
-                    <li>
-                        <div class="jobsearch-stats-list-wrap dark-blue">
-                            <h6><?php esc_html_e('Interviews', 'wp-jobsearch') ?></h6>
-                            <span><?php echo absint($job_short_int_count) ?></span>
-                            <small><?php esc_html_e('candidates', 'wp-jobsearch') ?></small>
-                        </div>
-                    </li>
-                </ul>
+        <?php
+        if ($user_stats_switch != 'off') {
+            ?>
+            <div class="jobsearch-employer-box-section">
+                <div class="jobsearch-profile-title">
+                    <h2><?php esc_html_e('Applications statistics', 'wp-jobsearch') ?></h2>
+                </div>
+                <div class="jobsearch-stats-list">
+                    <ul>
+                        <li>
+                            <div class="jobsearch-stats-list-wrap">
+                                <h6><?php esc_html_e('Posted jobs', 'wp-jobsearch') ?></h6>
+                                <span><?php echo absint($total_jobs) ?></span>
+                                <small><?php esc_html_e('to find talent', 'wp-jobsearch') ?></small>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="jobsearch-stats-list-wrap green">
+                                <h6><?php esc_html_e('Reviewed', 'wp-jobsearch') ?></h6>
+                                <span><?php echo absint($overall_viewed_cands) ?></span>
+                                <small><?php esc_html_e('CVs against opportunities', 'wp-jobsearch') ?></small>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="jobsearch-stats-list-wrap light-blue">
+                                <h6><?php esc_html_e('Shortlisted', 'wp-jobsearch') ?></h6>
+                                <span><?php echo absint($employer_resumes_count) ?></span>
+                                <small><?php esc_html_e('candidates against jobs', 'wp-jobsearch') ?></small>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="jobsearch-stats-list-wrap dark-blue">
+                                <h6><?php esc_html_e('Interviews', 'wp-jobsearch') ?></h6>
+                                <span><?php echo absint($job_short_int_count) ?></span>
+                                <small><?php esc_html_e('candidates', 'wp-jobsearch') ?></small>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                <?php
+                wp_enqueue_script('morris');
+                wp_enqueue_script('raphael');
+                ?>
+                <div class="jobsearch-applicants-graph">
+                    <div class="jobsearch-chart" id="chart-<?php echo absint($rand_id) ?>"></div>
+                    <script>
+                        jQuery(function () {
+                            Morris.Bar({
+                                element: 'chart-<?php echo absint($rand_id) ?>',
+                                data: [
+                                    {y: '<?php printf(esc_html__('Total CVs: %s', 'wp-jobsearch'), $job_appls_count) ?>, <?php printf(esc_html__('Unviewed CVs: %s', 'wp-jobsearch'), $job_unviewed_appls_count) ?>, <?php printf(esc_html__('Viewed CVs: %s', 'wp-jobsearch'), $overall_viewed_cands) ?>', item_1: <?php echo ($job_appls_count) ?>, item_2: <?php echo ($job_unviewed_appls_count) ?>, item_3: <?php echo ($overall_viewed_cands) ?>, },
+                                                ],
+                                                barColors: [
+                                                    "#008dc9", "#a869d6", "#84c15a"],
+                                                xkey: 'y',
+                                                ykeys: ["item_1", "item_2", "item_3", ],
+                                                labels: [
+                                                    "<?php esc_html_e('Total CVs', 'wp-jobsearch') ?>",
+                                                    "<?php esc_html_e('Unviewed CVs', 'wp-jobsearch') ?>",
+                                                    "<?php esc_html_e('Viewed CVs', 'wp-jobsearch') ?>"
+                                                ]
+                                            });
+                                        });
+                    </script>
+                </div>
+                <div class="jobsearch-applicants-stats">
+                    <div class="jobsearch-applicants-stats-wrap">
+                        <i class="fa fa-users"></i>
+                        <span><?php echo absint($job_appls_count) ?></span>
+                        <small><?php esc_html_e('Total Applicants', 'wp-jobsearch') ?></small>
+                    </div>
+                    <ul>
+                        <li><i class="fa fa-circle"></i> <?php esc_html_e('Viewed CVs', 'wp-jobsearch') ?></li>
+                        <li><i class="fa fa-circle light-blue"></i> <?php esc_html_e('Unviewed CVs', 'wp-jobsearch') ?></li>
+                        <li><i class="fa fa-circle dark-blue"></i> <?php esc_html_e('Total CVs', 'wp-jobsearch') ?></li>
+                    </ul>
+                </div>
             </div>
             <?php
-            wp_enqueue_script('morris');
-            wp_enqueue_script('raphael');
-            ?>
-            <div class="jobsearch-applicants-graph">
-                <div class="jobsearch-chart" id="chart-<?php echo absint($rand_id) ?>"></div>
-                <script>
-                    jQuery(function () {
-                        Morris.Bar({
-                            element: 'chart-<?php echo absint($rand_id) ?>',
-                            data: [
-                                {y: '<?php printf(esc_html__('Total CVs: %s', 'wp-jobsearch'), $job_appls_count) ?>, <?php printf(esc_html__('Unviewed CVs: %s', 'wp-jobsearch'), $job_unviewed_appls_count) ?>, <?php printf(esc_html__('Viewed CVs: %s', 'wp-jobsearch'), $overall_viewed_cands) ?>', item_1: <?php echo ($job_appls_count) ?>, item_2: <?php echo ($job_unviewed_appls_count) ?>, item_3: <?php echo ($overall_viewed_cands) ?>, },
-                                            ],
-                                            barColors: [
-                                                "#008dc9", "#a869d6", "#84c15a"],
-                                            xkey: 'y',
-                                            ykeys: ["item_1", "item_2", "item_3", ],
-                                            labels: [
-                                                "<?php esc_html_e('Total CVs', 'wp-jobsearch') ?>",
-                                                "<?php esc_html_e('Unviewed CVs', 'wp-jobsearch') ?>",
-                                                "<?php esc_html_e('Viewed CVs', 'wp-jobsearch') ?>"
-                                            ]
-                                        });
-                                    });
-                </script>
-            </div>
-            <div class="jobsearch-applicants-stats">
-                <div class="jobsearch-applicants-stats-wrap">
-                    <i class="fa fa-users"></i>
-                    <span><?php echo absint($job_appls_count) ?></span>
-                    <small><?php esc_html_e('Total Applicants', 'wp-jobsearch') ?></small>
-                </div>
-                <ul>
-                    <li><i class="fa fa-circle"></i> <?php esc_html_e('Viewed CVs', 'wp-jobsearch') ?></li>
-                    <li><i class="fa fa-circle light-blue"></i> <?php esc_html_e('Unviewed CVs', 'wp-jobsearch') ?></li>
-                    <li><i class="fa fa-circle dark-blue"></i> <?php esc_html_e('Total CVs', 'wp-jobsearch') ?></li>
-                </ul>
-            </div>
-        </div>
+        }
+        ?>
         <div class="jobsearch-employer-box-section">
 
             <div class="jobsearch-profile-title">
@@ -245,18 +252,12 @@ if ($employer_id > 0) {
                                     $jobsearch_candidate_jobtitle = get_post_meta($candidate_id, 'jobsearch_field_candidate_jobtitle', true);
                                     $jobsearch_candidate_company_name = get_post_meta($candidate_id, 'jobsearch_field_candidate_company_name', true);
                                     $jobsearch_candidate_company_url = get_post_meta($candidate_id, 'jobsearch_field_candidate_company_url', true);
-									
-									// CHS REGISTRO DIRECTO
-									$candidate_phone = get_post_meta($candidate_id, 'jobsearch_field_user_phone', true);
-									
                                     $candidate_company_str = '';
                                     if ($jobsearch_candidate_jobtitle != '') {
                                         $candidate_company_str .= $jobsearch_candidate_jobtitle;
                                     }
                                     $candidate_user_obj = get_user_by('ID', $candidate_user_id);
                                     $candidate_user_email = isset($candidate_user_obj->user_email) ? $candidate_user_obj->user_email : '';
-									
-									
 
                                     $final_color = '';
                                     $candidate_skills = isset($jobsearch_plugin_options['jobsearch_candidate_skills']) ? $jobsearch_plugin_options['jobsearch_candidate_skills'] : '';
@@ -327,17 +328,6 @@ if ($employer_id > 0) {
                                                             </li>
                                                             <?php
                                                         }
-														
-														
-														// INI CHS REGISTRO DIRECTO
-														if ($candidate_phone != '') {
-                                                            ?>
-                                                            <li>
-                                                          <small><?php printf(esc_html__('Phone: %s', 'wp-jobsearch'), $candidate_phone) ?></small>
-                                                           </li>
-                                                            <?php
-                                                        }
-                                                      // FIN CHS REGISTRO DIRECTO
                                                         ?>
                                                     </ul>
                                                 </div>

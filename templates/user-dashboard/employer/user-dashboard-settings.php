@@ -249,8 +249,11 @@ if ($user_avatar_id > 0) {
                     wp_editor($employer_content, 'user_bio', $settings);
                     ?>
                 </li>
+                <?php echo apply_filters('jobsearch_emp_dashbord_after_desc_content', '', $employer_id); ?>
             </ul>
         </div>
+        <?php echo apply_filters('jobsearch_emp_dash_after_generl_info', '', $employer_id); ?>
+        
         <?php do_action('jobsearch_dashboard_custom_fields_load', $employer_id, 'employer'); ?>
 
         <div class="jobsearch-employer-box-section">
@@ -533,7 +536,7 @@ if ($user_avatar_id > 0) {
                                                                                 </div>
                                                                             </li>
                                                                         </ul>
-                                                                    </div>   
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -562,14 +565,15 @@ if ($user_avatar_id > 0) {
         </div>
 
         <input type="hidden" name="user_settings_form" value="1">
+        <?php
+        jobsearch_terms_and_con_link_txt();
+        ?>
         <input type="submit" class="jobsearch-employer-profile-submit" value="<?php esc_html_e('Save Settings', 'wp-jobsearch') ?>">
         <?php
         ob_start();
         do_action('jobsearch_translate_profile_with_wpml_btn', $employer_id, 'employer', 'dashboard-settings');
         $btns_html = ob_get_clean();
         echo apply_filters('jobsearch_translate_eprofile_with_wpml_btn_html', $btns_html);
-        //
-        jobsearch_terms_and_con_link_txt();
         ?>
     </form>
 </div>

@@ -94,7 +94,7 @@ if ($candidate_id > 0) {
                 ?>
                 <div id="jobsearch-upload-cv-main" class="jobsearch-upload-cv">
                     <small><?php esc_html_e('Curriculum Vitae', 'wp-jobsearch') ?></small>
-                    <input class="jobsearch-disabled-input" id="jobsearch-uploadfile" placeholder="Samaple_CV.pdf" disabled="disabled">
+                    <input class="jobsearch-disabled-input" id="jobsearch-uploadfile" placeholder="<?php esc_html_e('Sample_CV.pdf', 'wp-jobsearch') ?>" disabled="disabled">
                     <div class="jobsearch-cvupload-file">
                         <span><i class="jobsearch-icon jobsearch-arrows-2"></i> <?php esc_html_e('Upload CV', 'wp-jobsearch') ?></span>
                         <input id="jobsearch-uploadbtn" type="file" name="candidate_cv_file" class="jobsearch-upload-btn">
@@ -108,7 +108,7 @@ if ($candidate_id > 0) {
             ?>
             <div id="jobsearch-upload-cv-main" class="jobsearch-upload-cv" style="display: <?php echo (empty($candidate_cv_file) ? 'block' : 'none') ?>;">
                  <small><?php esc_html_e('Curriculum Vitae', 'wp-jobsearch') ?></small>
-                 <input class="jobsearch-disabled-input" id="jobsearch-uploadfile" placeholder="Samaple_CV.pdf" disabled="disabled">
+                 <input class="jobsearch-disabled-input" id="jobsearch-uploadfile" placeholder="<?php esc_html_e('Sample_CV.pdf', 'wp-jobsearch') ?>" disabled="disabled">
                  <div class="jobsearch-cvupload-file">
                     <span><i class="jobsearch-icon jobsearch-arrows-2"></i> <?php esc_html_e('Upload CV', 'wp-jobsearch') ?></span>
                     <input id="jobsearch-uploadbtn" type="file" name="candidate_cv_file" class="jobsearch-upload-btn">

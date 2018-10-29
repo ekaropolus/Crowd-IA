@@ -70,7 +70,7 @@ if ($user_avatar_id > 0) {
 }
 ?>
 <div class="jobsearch-typo-wrap">
-    <form class="jobsearch-employer-dasboard" method="post" action="<?php echo add_query_arg(array('tab' => 'dashboard-settings'), $page_url) ?>">
+    <form class="jobsearch-employer-dasboard" method="post" action="<?php echo add_query_arg(array('tab' => 'dashboard-settings'), $page_url) ?>" enctype="multipart/form-data">
         <div class="jobsearch-employer-box-section">
             <div class="jobsearch-profile-title"><h2><?php esc_html_e('Basic Information', 'wp-jobsearch') ?></h2></div>
             <?php
@@ -321,6 +321,7 @@ if ($user_avatar_id > 0) {
                     wp_editor($candidate_content, 'user_bio', $settings);
                     ?>
                 </li>
+                <?php echo apply_filters('jobsearch_cand_dashbord_after_desc_content', '', $candidate_id) ?>
             </ul>
         </div>
         <?php echo apply_filters('jobsearch_cand_dash_profile_after_basicinfo', '', $candidate_id) ?>
@@ -350,7 +351,11 @@ if ($user_avatar_id > 0) {
                 </li>
             </ul>
         </div>
-        <?php do_action('jobsearch_dashboard_location_map', $candidate_id); ?>
+        <?php
+        //
+        do_action('jobsearch_dashboard_location_map', $candidate_id);
+        jobsearch_terms_and_con_link_txt();
+        ?>
 
         <input type="hidden" name="user_settings_form" value="1">
         <input type="submit" class="jobsearch-employer-profile-submit" value="<?php esc_html_e('Save Settings', 'wp-jobsearch') ?>">
@@ -360,7 +365,6 @@ if ($user_avatar_id > 0) {
         $btns_html = ob_get_clean();
         echo apply_filters('jobsearch_translate_cprofile_with_wpml_btn_html', $btns_html);
         //
-        jobsearch_terms_and_con_link_txt();
         ?>
     </form>
 </div>

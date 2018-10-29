@@ -12,6 +12,8 @@ $candidate_id = jobsearch_get_user_candidate_id($user_id);
 $reults_per_page = isset($jobsearch_plugin_options['user-dashboard-per-page']) && $jobsearch_plugin_options['user-dashboard-per-page'] > 0 ? $jobsearch_plugin_options['user-dashboard-per-page'] : 10;
 $all_location_allow = isset($jobsearch_plugin_options['all_location_allow']) ? $jobsearch_plugin_options['all_location_allow'] : '';
 
+$user_stats_switch = isset($jobsearch_plugin_options['user_stats_switch']) ? $jobsearch_plugin_options['user_stats_switch'] : '';
+
 $page_num = isset($_GET['page_num']) ? $_GET['page_num'] : 1;
 
 if ($candidate_id > 0) {
@@ -95,82 +97,87 @@ if ($candidate_id > 0) {
     wp_reset_postdata();
     ?>
     <div class="jobsearch-employer-dasboard">
-        <div class="jobsearch-employer-box-section">
-
-            <div class="jobsearch-profile-title">
-                <h2><?php esc_html_e('Applications Statistics', 'wp-jobsearch') ?></h2>
-            </div>
-            <div class="jobsearch-stats-list">
-                <ul>
-                    <li>
-                        <div class="jobsearch-stats-list-wrap">
-                            <h6><?php esc_html_e('Applied jobs', 'wp-jobsearch') ?></h6>
-                            <span><?php echo absint($user_applied_jobs_count) ?></span>
-                            <small><?php esc_html_e('to find career', 'wp-jobsearch') ?></small>
-                        </div>
-                    </li>
-                    <li>
-                        <div class="jobsearch-stats-list-wrap green">
-                            <h6><?php esc_html_e('Favourite Jobs', 'wp-jobsearch') ?></h6>
-                            <span><?php echo absint($fav_jobs_list_count) ?></span>
-                            <small><?php esc_html_e('against opportunities', 'wp-jobsearch') ?></small>
-                        </div>
-                    </li>
-                    <li>
-                        <div class="jobsearch-stats-list-wrap light-blue">
-                            <h6><?php esc_html_e('Job Alerts', 'wp-jobsearch') ?></h6>
-                            <span><?php echo absint($total_alerts) ?></span>
-                            <small><?php esc_html_e('to get latest updates', 'wp-jobsearch') ?></small>
-                        </div>
-                    </li>
-                    <li>
-                        <div class="jobsearch-stats-list-wrap dark-blue">
-                            <h6><?php esc_html_e('Packages', 'wp-jobsearch') ?></h6>
-                            <span><?php echo absint($total_pkgs) ?></span>
-                            <small><?php esc_html_e('to apply jobs', 'wp-jobsearch') ?></small>
-                        </div>
-                    </li>
-                </ul>
+        <?php
+        if ($user_stats_switch != 'off') {
+            ?>
+            <div class="jobsearch-employer-box-section">
+                <div class="jobsearch-profile-title">
+                    <h2><?php esc_html_e('Applications Statistics', 'wp-jobsearch') ?></h2>
+                </div>
+                <div class="jobsearch-stats-list">
+                    <ul>
+                        <li>
+                            <div class="jobsearch-stats-list-wrap">
+                                <h6><?php esc_html_e('Applied jobs', 'wp-jobsearch') ?></h6>
+                                <span><?php echo absint($user_applied_jobs_count) ?></span>
+                                <small><?php esc_html_e('to find career', 'wp-jobsearch') ?></small>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="jobsearch-stats-list-wrap green">
+                                <h6><?php esc_html_e('Favourite Jobs', 'wp-jobsearch') ?></h6>
+                                <span><?php echo absint($fav_jobs_list_count) ?></span>
+                                <small><?php esc_html_e('against opportunities', 'wp-jobsearch') ?></small>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="jobsearch-stats-list-wrap light-blue">
+                                <h6><?php esc_html_e('Job Alerts', 'wp-jobsearch') ?></h6>
+                                <span><?php echo absint($total_alerts) ?></span>
+                                <small><?php esc_html_e('to get latest updates', 'wp-jobsearch') ?></small>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="jobsearch-stats-list-wrap dark-blue">
+                                <h6><?php esc_html_e('Packages', 'wp-jobsearch') ?></h6>
+                                <span><?php echo absint($total_pkgs) ?></span>
+                                <small><?php esc_html_e('to apply jobs', 'wp-jobsearch') ?></small>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                <?php
+                wp_enqueue_script('morris');
+                wp_enqueue_script('raphael');
+                ?>
+                <div class="jobsearch-applicants-graph">
+                    <div class="jobsearch-chart" id="chart-<?php echo absint($rand_id) ?>"></div>
+                    <script>
+                        jQuery(function () {
+                            Morris.Bar({
+                                element: 'chart-<?php echo absint($rand_id) ?>',
+                                data: [
+                                    {y: '<?php printf(esc_html__('Applied Jobs: %s', 'wp-jobsearch'), $user_applied_jobs_count) ?>, <?php printf(esc_html__('Favourite Jobs: %s', 'wp-jobsearch'), $fav_jobs_list_count) ?>, <?php printf(esc_html__('Job Alerts: %s', 'wp-jobsearch'), $total_alerts) ?>', item_1: <?php echo ($user_applied_jobs_count) ?>, item_2: <?php echo ($fav_jobs_list_count) ?>, item_3: <?php echo ($total_alerts) ?>, },
+                                                ],
+                                                barColors: [
+                                                    "#008dc9", "#a869d6", "#84c15a"],
+                                                xkey: 'y',
+                                                ykeys: ["item_1", "item_2", "item_3", ],
+                                                labels: [
+                                                    "<?php esc_html_e('Applied Jobs', 'wp-jobsearch') ?>",
+                                                    "<?php esc_html_e('Favourite Jobs', 'wp-jobsearch') ?>",
+                                                    "<?php esc_html_e('Job Alerts', 'wp-jobsearch') ?>"
+                                                ]
+                                            });
+                                        });
+                    </script>
+                </div>
+                <div class="jobsearch-applicants-stats">
+                    <div class="jobsearch-applicants-stats-wrap">
+                        <i class="fa fa-users"></i>
+                        <span><?php echo absint($user_applied_jobs_count) ?></span>
+                        <small><?php esc_html_e('Total Applied Jobs', 'wp-jobsearch') ?></small>
+                    </div>
+                    <ul>
+                        <li><i class="fa fa-circle dark-blue"></i> <?php esc_html_e('Applied Jobs', 'wp-jobsearch') ?></li>
+                        <li><i class="fa fa-circle light-blue"></i> <?php esc_html_e('Favourite Jobs', 'wp-jobsearch') ?></li>
+                        <li><i class="fa fa-circle"></i> <?php esc_html_e('Job Alerts', 'wp-jobsearch') ?></li>
+                    </ul>
+                </div>
             </div>
             <?php
-            wp_enqueue_script('morris');
-            wp_enqueue_script('raphael');
-            ?>
-            <div class="jobsearch-applicants-graph">
-                <div class="jobsearch-chart" id="chart-<?php echo absint($rand_id) ?>"></div>
-                <script>
-                    jQuery(function () {
-                        Morris.Bar({
-                            element: 'chart-<?php echo absint($rand_id) ?>',
-                            data: [
-                                {y: '<?php printf(esc_html__('Applied Jobs: %s', 'wp-jobsearch'), $user_applied_jobs_count) ?>, <?php printf(esc_html__('Favourite Jobs: %s', 'wp-jobsearch'), $fav_jobs_list_count) ?>, <?php printf(esc_html__('Job Alerts: %s', 'wp-jobsearch'), $total_alerts) ?>', item_1: <?php echo ($user_applied_jobs_count) ?>, item_2: <?php echo ($fav_jobs_list_count) ?>, item_3: <?php echo ($total_alerts) ?>, },
-                                            ],
-                                            barColors: [
-                                                "#008dc9", "#a869d6", "#84c15a"],
-                                            xkey: 'y',
-                                            ykeys: ["item_1", "item_2", "item_3", ],
-                                            labels: [
-                                                "<?php esc_html_e('Applied Jobs', 'wp-jobsearch') ?>",
-                                                "<?php esc_html_e('Favourite Jobs', 'wp-jobsearch') ?>",
-                                                "<?php esc_html_e('Job Alerts', 'wp-jobsearch') ?>"
-                                            ]
-                                        });
-                                    });
-                </script>
-            </div>
-            <div class="jobsearch-applicants-stats">
-                <div class="jobsearch-applicants-stats-wrap">
-                    <i class="fa fa-users"></i>
-                    <span><?php echo absint($user_applied_jobs_count) ?></span>
-                    <small><?php esc_html_e('Total Applied Jobs', 'wp-jobsearch') ?></small>
-                </div>
-                <ul>
-                    <li><i class="fa fa-circle dark-blue"></i> <?php esc_html_e('Applied Jobs', 'wp-jobsearch') ?></li>
-                    <li><i class="fa fa-circle light-blue"></i> <?php esc_html_e('Favourite Jobs', 'wp-jobsearch') ?></li>
-                    <li><i class="fa fa-circle"></i> <?php esc_html_e('Job Alerts', 'wp-jobsearch') ?></li>
-                </ul>
-            </div>
-        </div>
+        }
+        ?>
         <div class="jobsearch-employer-box-section">
 
             <div class="jobsearch-profile-title">

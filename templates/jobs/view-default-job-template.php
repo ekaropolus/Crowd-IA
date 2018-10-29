@@ -25,7 +25,6 @@ if ($job_no_custom_fields == '' || !is_numeric($job_no_custom_fields)) {
 $job_filters = isset($atts['job_filters']) ? $atts['job_filters'] : '';
 $jobsearch_jobs_title_limit = isset($atts['jobs_title_limit']) ? $atts['jobs_title_limit'] : '5';
 
-
 $paging_var = 'job_page';
 $job_page = isset($_REQUEST[$paging_var]) && $_REQUEST[$paging_var] != '' ? $_REQUEST[$paging_var] : 1;
 $job_ad_banners_rep = isset($atts['job_ad_banners_rep']) ? $atts['job_ad_banners_rep'] : '';
@@ -121,6 +120,7 @@ if (isset($featjobs_posts) && !empty($featjobs_posts)) {
                                                 }
                                                 ?>
                                             </h2>
+                                            <?php do_action('jobsearch_jobs_listing_after_title', $job_id, 'jobs_list_default'); ?>
                                             <ul>
                                                 <?php
                                                 if ($company_name != '') {
@@ -273,6 +273,7 @@ if (isset($featjobs_posts) && !empty($featjobs_posts)) {
                                                 }
                                                 ?>
                                             </h2>
+                                            <?php do_action('jobsearch_jobs_listing_after_title', $job_id, 'jobs_list_default'); ?>
                                             <ul>
                                                 <?php
                                                 if ($company_name != '') {
