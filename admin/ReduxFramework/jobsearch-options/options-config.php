@@ -223,7 +223,7 @@ if (!class_exists("Redux_Framework_options_config")) {
                     foreach ($pkgs_list as $pkg_item) {
                         $cv_pkg_post = get_post($pkg_item);
                         $cv_pkg_post_name = isset($cv_pkg_post->post_name) ? $cv_pkg_post->post_name : '';
-                        $cv_pckgs[$cv_pkg_post_name] = get_the_title($pkg_item);
+                        $cv_pckgs[$cv_pkg_post_name] = $cv_pkg_post->post_title;
                     }
                 }
             }
@@ -354,6 +354,7 @@ if (!class_exists("Redux_Framework_options_config")) {
                 'subtitle' => __('Jobs settings.', 'wp-jobsearch'),
                 'indent' => true,
             );
+            $sec_array = apply_filters('jobsearch_redx_opt_genjobs_start', $sec_array);
             $sec_array[] = array(
                 'id' => 'job_types_switch',
                 'type' => 'button_set',
@@ -387,6 +388,10 @@ if (!class_exists("Redux_Framework_options_config")) {
                 'options' => $all_page,
                 'default' => '',
             );
+
+            $sec_array = apply_filters('job_detail_pages_styles', $sec_array);
+
+
             $sec_array[] = array(
                 'id' => 'job_det_contact_form',
                 'type' => 'button_set',
@@ -410,18 +415,6 @@ if (!class_exists("Redux_Framework_options_config")) {
                     'off' => __('Off', 'wp-jobsearch'),
                 ),
                 'default' => 'on',
-            );
-            $sec_array[] = array(
-                'id' => 'job_emp_cntct_wout_login',
-                'type' => 'button_set',
-                'title' => __('Contact Job Employer without Loging', 'wp-jobsearch'),
-                'subtitle' => __('Enable/Disable Contact to Job Employer without Loging.', 'wp-jobsearch'),
-                'desc' => '',
-                'options' => array(
-                    'on' => __('Yes', 'wp-jobsearch'),
-                    'off' => __('No', 'wp-jobsearch'),
-                ),
-                'default' => 'off',
             );
             $sec_array[] = array(
                 'id' => 'default_no_img',
@@ -673,7 +666,7 @@ if (!class_exists("Redux_Framework_options_config")) {
             if (isset($section_settings['title'])) {
                 $this->sections[] = $section_settings;
             }
-            
+
             $cand_custom_fileds = $empl_custom_fileds = array();
             $custom_fields_candidate = get_option('jobsearch_custom_field_candidate');
             if (is_array($custom_fields_candidate) && sizeof($custom_fields_candidate) > 0) {
@@ -846,372 +839,396 @@ if (!class_exists("Redux_Framework_options_config")) {
                         ),
                         'default' => 'on',
                     ),
+                    array(
+                        'id' => 'user_stats_switch',
+                        'type' => 'button_set',
+                        'title' => __('User Statistics', 'wp-jobsearch'),
+                        'subtitle' => '',
+                        'desc' => __('On/Off User Statistics in dashboard.', 'wp-jobsearch'),
+                        'options' => array(
+                            'on' => __('On', 'wp-jobsearch'),
+                            'off' => __('Off', 'wp-jobsearch'),
+                        ),
+                        'default' => 'on',
+                    ),
                 )
             );
             $this->sections[] = $section_settings;
+
+
+
+            $employer_arr = array();
+            $employer_arr[] = array(
+                'id' => 'employer_auto_approve',
+                'type' => 'button_set',
+                'title' => __('Employer Auto Approve', 'wp-jobsearch'),
+                'subtitle' => '',
+                'desc' => __('Allow employers to auto approved after registeration.', 'wp-jobsearch'),
+                'options' => array(
+                    'on' => __('On', 'wp-jobsearch'),
+                    'off' => __('Off', 'wp-jobsearch'),
+                ),
+                'default' => 'on',
+            );
+            $employer_arr[] = array(
+                'id' => 'unapproverd_employer_txt',
+                'type' => 'editor',
+                'args' => array(
+                    'teeny' => true,
+                    'media_buttons' => false,
+                ),
+                'title' => __('Unapproved Employer Text', 'wp-jobsearch'),
+                'required' => array('employer_auto_approve', 'equals', 'off'),
+                'subtitle' => __('This text will show in unapproved employer dashboard.', 'wp-jobsearch'),
+                'desc' => '',
+                'default' => '<strong>ACCOUNT ACTIVATION REQUIRED BY ADMIN !</strong>
+                                        <strong>Your account is In-active!</strong>
+                                        Your membership account is awaiting approval by the site administrator. You will not be able to fully interact with the account functions and aspects of this website until your account is approved. Once approved by admin or denied you will receive an email notice.',
+            );
+            $employer_arr[] = array(
+                'id' => 'free-shortlist-allow',
+                'type' => 'button_set',
+                'title' => __('Free Shortlist', 'wp-jobsearch'),
+                'subtitle' => '',
+                'desc' => __('Allow employers to shortlist candidates absolutely package free.', 'wp-jobsearch'),
+                'options' => array(
+                    'on' => __('On', 'wp-jobsearch'),
+                    'off' => __('Off', 'wp-jobsearch'),
+                ),
+                'default' => 'on',
+            );
+            $employer_arr[] = array(
+                'id' => 'allow_team_members',
+                'type' => 'button_set',
+                'title' => __('Employer Team Members', 'wp-jobsearch'),
+                'subtitle' => '',
+                'desc' => __('Allow Employer to add Team Members.', 'wp-jobsearch'),
+                'options' => array(
+                    'on' => __('On', 'wp-jobsearch'),
+                    'off' => __('Off', 'wp-jobsearch'),
+                ),
+                'default' => 'on',
+            );
+            $employer_arr[] = array(
+                'id' => 'resume_package_page',
+                'type' => 'select',
+                'title' => __('Resume Packages Page', 'wp-jobsearch'),
+                'required' => array('free-shortlist-allow', 'equals', 'off'),
+                'subtitle' => __('Select Resume Packages Page. It will redirect employers at selected page to buy package.', 'wp-jobsearch'),
+                'desc' => '',
+                'options' => $all_page,
+                'default' => '',
+            );
+            $employer_arr[] = array(
+                'id' => 'max_gal_imgs_allow',
+                'type' => 'text',
+                'title' => __('Maximum Gallery images allowed', 'wp-jobsearch'),
+                'subtitle' => '',
+                'desc' => __('Set Maximum Gallery images allowed.', 'wp-jobsearch'),
+                'default' => '5',
+            );
+
+            $employer_arr = apply_filters('employer_detail_pages_styles', $employer_arr);
+
+            $employer_arr[] = array(
+                'id' => 'employer_no_img',
+                'type' => 'media',
+                'url' => true,
+                'title' => __('Employer Image Placeholder', 'wp-jobsearch'),
+                'compiler' => 'true',
+                'desc' => '',
+                'subtitle' => '',
+                'default' => array('url' => jobsearch_plugin_get_url('images/no-image.jpg')),
+            );
+            $employer_arr[] = array(
+                'id' => 'emp_det_contact_form',
+                'type' => 'button_set',
+                'title' => __('Employer Detail Contact Form', 'wp-jobsearch'),
+                'subtitle' => '',
+                'desc' => __('Allow candidates to contact employer at Employers detail page.', 'wp-jobsearch'),
+                'options' => array(
+                    'on' => __('On', 'wp-jobsearch'),
+                    'off' => __('Off', 'wp-jobsearch'),
+                ),
+                'default' => 'on',
+            );
+            $employer_arr[] = array(
+                'id' => 'emp_cntct_wout_login',
+                'type' => 'button_set',
+                'title' => __('Contact Employer without Login', 'wp-jobsearch'),
+                'subtitle' => '',
+                'desc' => __('Allow users to contact employers without login.', 'wp-jobsearch'),
+                'options' => array(
+                    'on' => __('Yes', 'wp-jobsearch'),
+                    'off' => __('No', 'wp-jobsearch'),
+                ),
+                'default' => 'off',
+            );
+            $employer_arr[] = array(
+                'id' => 'elistin_map_marker_img',
+                'type' => 'media',
+                'url' => true,
+                'title' => __('Employers Map Marker Icon', 'wp-jobsearch'),
+                'compiler' => 'true',
+                'desc' => '',
+                'subtitle' => '',
+                'default' => array('url' => ''),
+            );
+            $employer_arr[] = array(
+                'id' => 'elistin_map_cluster_img',
+                'type' => 'media',
+                'url' => true,
+                'title' => __('Employers Map Cluster Icon', 'wp-jobsearch'),
+                'compiler' => 'true',
+                'desc' => '',
+                'subtitle' => '',
+                'default' => array('url' => ''),
+            );
 
             $section_settings = array(
                 'title' => __('Employer Settings', 'wp-jobsearch'),
                 'id' => 'user-dashboard',
                 'desc' => __('Employer Common Settings', 'wp-jobsearch'),
                 'icon' => 'el el-user',
-                'fields' => array(
-                    array(
-                        'id' => 'employer_auto_approve',
-                        'type' => 'button_set',
-                        'title' => __('Employer Auto Approve', 'wp-jobsearch'),
-                        'subtitle' => '',
-                        'desc' => __('Allow employers to auto approved after registeration.', 'wp-jobsearch'),
-                        'options' => array(
-                            'on' => __('On', 'wp-jobsearch'),
-                            'off' => __('Off', 'wp-jobsearch'),
-                        ),
-                        'default' => 'on',
-                    ),
-                    array(
-                        'id' => 'emp_cntct_wout_login',
-                        'type' => 'button_set',
-                        'title' => __('Contact Employer without Login', 'wp-jobsearch'),
-                        'subtitle' => '',
-                        'desc' => __('Allow users to contact employers without login.', 'wp-jobsearch'),
-                        'options' => array(
-                            'on' => __('Yes', 'wp-jobsearch'),
-                            'off' => __('No', 'wp-jobsearch'),
-                        ),
-                        'default' => 'off',
-                    ),
-                    array(
-                        'id' => 'unapproverd_employer_txt',
-                        'type' => 'editor',
-                        'args' => array(
-                            'teeny' => true,
-                            'media_buttons' => false,
-                        ),
-                        'title' => __('Unapproved Employer Text', 'wp-jobsearch'),
-                        'required' => array('employer_auto_approve', 'equals', 'off'),
-                        'subtitle' => __('This text will show in unapproved employer dashboard.', 'wp-jobsearch'),
-                        'desc' => '',
-                        'default' => '<strong>ACCOUNT ACTIVATION REQUIRED BY ADMIN !</strong>
+                'fields' => $employer_arr,
+            );
+            $this->sections[] = $section_settings;
+
+
+
+
+            $candidate_arr = array();
+
+            $candidate_arr[] = array(
+                'id' => 'candidate_auto_approve',
+                'type' => 'button_set',
+                'title' => __('Candidate Auto Approve', 'wp-jobsearch'),
+                'subtitle' => '',
+                'desc' => __('Allow candidates to auto approved after registeration.', 'wp-jobsearch'),
+                'options' => array(
+                    'on' => __('On', 'wp-jobsearch'),
+                    'off' => __('Off', 'wp-jobsearch'),
+                ),
+                'default' => 'on',
+            );
+            $candidate_arr[] = array(
+                'id' => 'unapproverd_candidate_txt',
+                'type' => 'editor',
+                'args' => array(
+                    'teeny' => true,
+                    'media_buttons' => false,
+                ),
+                'title' => __('Unapproved Candidate Text', 'wp-jobsearch'),
+                'required' => array('candidate_auto_approve', 'equals', 'off'),
+                'subtitle' => __('This text will show in unapproved candidate dashboard.', 'wp-jobsearch'),
+                'desc' => '',
+                'default' => '<strong>ACCOUNT ACTIVATION REQUIRED BY ADMIN !</strong>
 
 <strong>Your account is In-active!</strong>
 
 Your membership account is awaiting approval by the site administrator. You will not be able to fully interact with the account functions and aspects of this website until your account is approved. Once approved by admin or denied you will receive an email notice.',
-                    ),
-                    array(
-                        'id' => 'free-shortlist-allow',
-                        'type' => 'button_set',
-                        'title' => __('Free Shortlist', 'wp-jobsearch'),
-                        'subtitle' => '',
-                        'desc' => __('Allow employers to shortlist candidates absolutely package free.', 'wp-jobsearch'),
-                        'options' => array(
-                            'on' => __('On', 'wp-jobsearch'),
-                            'off' => __('Off', 'wp-jobsearch'),
-                        ),
-                        'default' => 'on',
-                    ),
-                    array(
-                        'id' => 'allow_team_members',
-                        'type' => 'button_set',
-                        'title' => __('Employer Team Members', 'wp-jobsearch'),
-                        'subtitle' => '',
-                        'desc' => __('Allow Employer to add Team Members.', 'wp-jobsearch'),
-                        'options' => array(
-                            'on' => __('On', 'wp-jobsearch'),
-                            'off' => __('Off', 'wp-jobsearch'),
-                        ),
-                        'default' => 'on',
-                    ),
-                    array(
-                        'id' => 'resume_package_page',
-                        'type' => 'select',
-                        'title' => __('Resume Packages Page', 'wp-jobsearch'),
-                        'required' => array('free-shortlist-allow', 'equals', 'off'),
-                        'subtitle' => __('Select Resume Packages Page. It will redirect employers at selected page to buy package.', 'wp-jobsearch'),
-                        'desc' => '',
-                        'options' => $all_page,
-                        'default' => '',
-                    ),
-                    array(
-                        'id' => 'max_gal_imgs_allow',
-                        'type' => 'text',
-                        'title' => __('Maximum Gallery images allowed', 'wp-jobsearch'),
-                        'subtitle' => '',
-                        'desc' => __('Set Maximum Gallery images allowed.', 'wp-jobsearch'),
-                        'default' => '5',
-                    ),
-                    array(
-                        'id' => 'employer_no_img',
-                        'type' => 'media',
-                        'url' => true,
-                        'title' => __('Employer Image Placeholder', 'wp-jobsearch'),
-                        'compiler' => 'true',
-                        'desc' => '',
-                        'subtitle' => '',
-                        'default' => array('url' => jobsearch_plugin_get_url('images/no-image.jpg')),
-                    ),
-                    array(
-                        'id' => 'emp_det_contact_form',
-                        'type' => 'button_set',
-                        'title' => __('Employer Detail Contact Form', 'wp-jobsearch'),
-                        'subtitle' => '',
-                        'desc' => __('Allow candidates to contact employer at Employers detail page.', 'wp-jobsearch'),
-                        'options' => array(
-                            'on' => __('On', 'wp-jobsearch'),
-                            'off' => __('Off', 'wp-jobsearch'),
-                        ),
-                        'default' => 'on',
-                    ),
-                    array(
-                        'id' => 'elistin_map_marker_img',
-                        'type' => 'media',
-                        'url' => true,
-                        'title' => __('Employers Map Marker Icon', 'wp-jobsearch'),
-                        'compiler' => 'true',
-                        'desc' => '',
-                        'subtitle' => '',
-                        'default' => array('url' => ''),
-                    ),
-                    array(
-                        'id' => 'elistin_map_cluster_img',
-                        'type' => 'media',
-                        'url' => true,
-                        'title' => __('Employers Map Cluster Icon', 'wp-jobsearch'),
-                        'compiler' => 'true',
-                        'desc' => '',
-                        'subtitle' => '',
-                        'default' => array('url' => ''),
-                    ),
-                ),
             );
-            $this->sections[] = $section_settings;
+            $candidate_arr[] = array(
+                'id' => 'free-job-apply-allow',
+                'type' => 'button_set',
+                'title' => __('Free Job Apply', 'wp-jobsearch'),
+                'subtitle' => '',
+                'desc' => __('Allow candidates to apply jobs absolutely package free.', 'wp-jobsearch'),
+                'options' => array(
+                    'on' => __('On', 'wp-jobsearch'),
+                    'off' => __('Off', 'wp-jobsearch'),
+                ),
+                'default' => 'on',
+            );
+            $candidate_arr = apply_filters('candidate_detail_pages_styles', $candidate_arr);
+            $candidate_arr[] = array(
+                'id' => 'candidate_package_page',
+                'type' => 'select',
+                'title' => __('Candidate Packages Page', 'wp-jobsearch'),
+                'required' => array('free-job-apply-allow', 'equals', 'off'),
+                'subtitle' => __('Select Candidate Packages Page. It will redirect candidates at selected page to buy package.', 'wp-jobsearch'),
+                'desc' => '',
+                'options' => $all_page,
+                'default' => '',
+            );
+            $candidate_arr[] = array(
+                'id' => 'apply_social_platforms',
+                'type' => 'button_set',
+                'multi' => true,
+                'title' => __('Apply Job with Social Platforms', 'wp-jobsearch'),
+                'subtitle' => '',
+                'options' => array(
+                    'facebook' => __('Facebook', 'wp-jobsearch'),
+                    'linkedin' => __('Linkedin', 'wp-jobsearch'),
+                    'google' => __('Google', 'wp-jobsearch'),
+                ),
+                'default' => array('facebook', 'linkedin'),
+                'desc' => __('Select Social Platforms to apply job.', 'wp-jobsearch'),
+            );
+            $candidate_arr[] = array(
+                'id' => 'max_portfolio_allow',
+                'type' => 'text',
+                'title' => __('Maximum Portfolios allowed', 'wp-jobsearch'),
+                'subtitle' => '',
+                'desc' => __('Set Maximum Portfolios allowed for candidate.', 'wp-jobsearch'),
+                'default' => '5',
+            );
+            $candidate_arr[] = array(
+                'id' => 'multiple_cv_uploads',
+                'type' => 'button_set',
+                'title' => __('Multiple CV Upload', 'wp-jobsearch'),
+                'subtitle' => '',
+                'desc' => __('Allow candidates to Upload Multiple CV files.', 'wp-jobsearch'),
+                'options' => array(
+                    'on' => __('On', 'wp-jobsearch'),
+                    'off' => __('Off', 'wp-jobsearch'),
+                ),
+                'default' => 'off',
+            );
+            $candidate_arr[] = array(
+                'id' => 'max_cvs_allow',
+                'type' => 'text',
+                'title' => __('Maximum CVs allowed', 'wp-jobsearch'),
+                'subtitle' => '',
+                'desc' => __('Set Maximum CVs allowed for candidate.', 'wp-jobsearch'),
+                'default' => '5',
+            );
+            $candidate_arr[] = array(
+                'id' => 'restrict_candidates',
+                'type' => 'button_set',
+                'title' => __('Restrict Candidate Detail', 'wp-jobsearch'),
+                'subtitle' => __('Restrict Candidates detail page for all users except employers.', 'wp-jobsearch'),
+                'desc' => '',
+                'options' => array(
+                    'on' => __('On', 'wp-jobsearch'),
+                    'off' => __('Off', 'wp-jobsearch'),
+                ),
+                'default' => 'off',
+            );
+            $candidate_arr[] = array(
+                'id' => 'restrict_candidates_list',
+                'type' => 'button_set',
+                'title' => __('Restrict Candidates Listing', 'wp-jobsearch'),
+                'subtitle' => __('Restrict Candidates Listing page for all users except employers.', 'wp-jobsearch'),
+                'desc' => '',
+                'options' => array(
+                    'on' => __('On', 'wp-jobsearch'),
+                    'off' => __('Off', 'wp-jobsearch'),
+                ),
+                'default' => 'off',
+            );
+            $candidate_arr[] = array(
+                'id' => 'restrict_cand_msg',
+                'type' => 'textarea',
+                'title' => __('Restrict page Message', 'wp-jobsearch'),
+                'subtitle' => __('Message for restrict candidate page.', 'wp-jobsearch'),
+                'desc' => '',
+                'default' => __('THE PAGE IS RESTRICTED ONLY FOR SUBSCRIBED EMPLOYERS', 'wp-jobsearch'),
+            );
+            $candidate_arr[] = array(
+                'id' => 'restrict_candidates_for_users',
+                'type' => 'button_set',
+                'title' => __('Restrict for Employers', 'wp-jobsearch'),
+                //'required' => array('restrict_candidates', 'equals', 'on'),
+                'subtitle' => __('1. All registered employers can view candidates. <br> 2. Registered employers who purchased resume package can view candidates. <br> 3. Employer can view only their own applicants candidates.', 'wp-jobsearch'),
+                'desc' => '',
+                'options' => array(
+                    'register' => __('1. Register Employers', 'wp-jobsearch'),
+                    'register_resume' => __('2. Register Employers with package', 'wp-jobsearch'),
+                    'only_applicants' => __('3. Only Applicants', 'wp-jobsearch'),
+                ),
+                'default' => 'register',
+            );
+            $candidate_arr[] = array(
+                'id' => 'restrict_cv_packages',
+                'type' => 'select',
+                'multi' => true,
+                'title' => __('Cv Packages', 'wp-jobsearch'),
+                'required' => array(
+                    //array('restrict_candidates', 'equals', 'on'),
+                    array('restrict_candidates_for_users', 'equals', 'register_resume'),
+                ),
+                'subtitle' => '',
+                'options' => $cv_pckgs,
+                'default' => '',
+                'desc' => __('Select Cv packages for employers.', 'wp-jobsearch'),
+            );
+            $candidate_arr[] = array(
+                'id' => 'candidate_restrict_img',
+                'type' => 'media',
+                'url' => true,
+                'title' => __('Restriction Image', 'wp-jobsearch'),
+                //'required' => array('restrict_candidates', 'equals', 'on'),
+                'compiler' => 'true',
+                'desc' => __('Candidate Restriction Image', 'wp-jobsearch'),
+                'subtitle' => '',
+                'default' => array('url' => jobsearch_plugin_get_url('images/restrict-candidate.png')),
+            );
+            $candidate_arr[] = array(
+                'id' => 'candidate_no_img',
+                'type' => 'media',
+                'url' => true,
+                'title' => __('Candidate Image Placeholder', 'wp-jobsearch'),
+                'compiler' => 'true',
+                'desc' => '',
+                'subtitle' => '',
+                'default' => array('url' => jobsearch_plugin_get_url('images/no-image.jpg')),
+            );
+            $candidate_arr[] = array(
+                'id' => 'cand_det_contact_form',
+                'type' => 'button_set',
+                'title' => __('Candidate Detail Contact Form', 'wp-jobsearch'),
+                'subtitle' => '',
+                'desc' => __('Allow employer to contact candidates at Candidate detail page.', 'wp-jobsearch'),
+                'options' => array(
+                    'on' => __('On', 'wp-jobsearch'),
+                    'off' => __('Off', 'wp-jobsearch'),
+                ),
+                'default' => 'on',
+            );
+            $candidate_arr[] = array(
+                'id' => 'cand_cntct_wout_login',
+                'type' => 'button_set',
+                'title' => __('Contact Candidate without Login', 'wp-jobsearch'),
+                'subtitle' => '',
+                'desc' => __('Allow users to contact candidates without login.', 'wp-jobsearch'),
+                'options' => array(
+                    'on' => __('Yes', 'wp-jobsearch'),
+                    'off' => __('No', 'wp-jobsearch'),
+                ),
+                'default' => 'off',
+            );
+            $candidate_arr[] = array(
+                'id' => 'clistin_map_marker_img',
+                'type' => 'media',
+                'url' => true,
+                'title' => __('Candidates Map Marker Icon', 'wp-jobsearch'),
+                'compiler' => 'true',
+                'desc' => '',
+                'subtitle' => '',
+                'default' => array('url' => ''),
+            );
+            $candidate_arr[] = array(
+                'id' => 'clistin_map_cluster_img',
+                'type' => 'media',
+                'url' => true,
+                'title' => __('Candidates Map Cluster Icon', 'wp-jobsearch'),
+                'compiler' => 'true',
+                'desc' => '',
+                'subtitle' => '',
+                'default' => array('url' => ''),
+            );
+
+
 
             $section_settings = array(
                 'title' => __('Candidate Settings', 'wp-jobsearch'),
                 'id' => 'user-dashboard',
                 'desc' => __('Candidate Common Settings', 'wp-jobsearch'),
                 'icon' => 'el el-user',
-                'fields' => apply_filters('jobsearch_options_candidate_setings_fields', array(
-                    array(
-                        'id' => 'candidate_auto_approve',
-                        'type' => 'button_set',
-                        'title' => __('Candidate Auto Approve', 'wp-jobsearch'),
-                        'subtitle' => '',
-                        'desc' => __('Allow candidates to auto approved after registeration.', 'wp-jobsearch'),
-                        'options' => array(
-                            'on' => __('On', 'wp-jobsearch'),
-                            'off' => __('Off', 'wp-jobsearch'),
-                        ),
-                        'default' => 'on',
-                    ),
-                    array(
-                        'id' => 'cand_cntct_wout_login',
-                        'type' => 'button_set',
-                        'title' => __('Contact Candidate without Login', 'wp-jobsearch'),
-                        'subtitle' => '',
-                        'desc' => __('Allow users to contact candidates without login.', 'wp-jobsearch'),
-                        'options' => array(
-                            'on' => __('Yes', 'wp-jobsearch'),
-                            'off' => __('No', 'wp-jobsearch'),
-                        ),
-                        'default' => 'off',
-                    ),
-                    array(
-                        'id' => 'unapproverd_candidate_txt',
-                        'type' => 'editor',
-                        'args' => array(
-                            'teeny' => true,
-                            'media_buttons' => false,
-                        ),
-                        'title' => __('Unapproved Candidate Text', 'wp-jobsearch'),
-                        'required' => array('candidate_auto_approve', 'equals', 'off'),
-                        'subtitle' => __('This text will show in unapproved candidate dashboard.', 'wp-jobsearch'),
-                        'desc' => '',
-                        'default' => '<strong>ACCOUNT ACTIVATION REQUIRED BY ADMIN !</strong>
-
-<strong>Your account is In-active!</strong>
-
-Your membership account is awaiting approval by the site administrator. You will not be able to fully interact with the account functions and aspects of this website until your account is approved. Once approved by admin or denied you will receive an email notice.',
-                    ),
-                    array(
-                        'id' => 'free-job-apply-allow',
-                        'type' => 'button_set',
-                        'title' => __('Free Job Apply', 'wp-jobsearch'),
-                        'subtitle' => '',
-                        'desc' => __('Allow candidates to apply jobs absolutely package free.', 'wp-jobsearch'),
-                        'options' => array(
-                            'on' => __('On', 'wp-jobsearch'),
-                            'off' => __('Off', 'wp-jobsearch'),
-                        ),
-                        'default' => 'on',
-                    ),
-                    array(
-                        'id' => 'candidate_package_page',
-                        'type' => 'select',
-                        'title' => __('Candidate Packages Page', 'wp-jobsearch'),
-                        'required' => array('free-job-apply-allow', 'equals', 'off'),
-                        'subtitle' => __('Select Candidate Packages Page. It will redirect candidates at selected page to buy package.', 'wp-jobsearch'),
-                        'desc' => '',
-                        'options' => $all_page,
-                        'default' => '',
-                    ),
-                    array(
-                        'id' => 'apply_social_platforms',
-                        'type' => 'button_set',
-                        'multi' => true,
-                        'title' => __('Apply Job with Social Platforms', 'wp-jobsearch'),
-                        'subtitle' => '',
-                        'options' => array(
-                            'facebook' => __('Facebook', 'wp-jobsearch'),
-                            'linkedin' => __('Linkedin', 'wp-jobsearch'),
-                            'google' => __('Google', 'wp-jobsearch'),
-                        ),
-                        'default' => array('facebook', 'linkedin'),
-                        'desc' => __('Select Social Platforms to apply job.', 'wp-jobsearch'),
-                    ),
-                    array(
-                        'id' => 'max_portfolio_allow',
-                        'type' => 'text',
-                        'title' => __('Maximum Portfolios allowed', 'wp-jobsearch'),
-                        'subtitle' => '',
-                        'desc' => __('Set Maximum Portfolios allowed for candidate.', 'wp-jobsearch'),
-                        'default' => '5',
-                    ),
-                    array(
-                        'id' => 'multiple_cv_uploads',
-                        'type' => 'button_set',
-                        'title' => __('Multiple CV Upload', 'wp-jobsearch'),
-                        'subtitle' => '',
-                        'desc' => __('Allow candidates to Upload Multiple CV files.', 'wp-jobsearch'),
-                        'options' => array(
-                            'on' => __('On', 'wp-jobsearch'),
-                            'off' => __('Off', 'wp-jobsearch'),
-                        ),
-                        'default' => 'off',
-                    ),
-                    array(
-                        'id' => 'max_cvs_allow',
-                        'type' => 'text',
-                        'title' => __('Maximum CVs allowed', 'wp-jobsearch'),
-                        'subtitle' => '',
-                        'desc' => __('Set Maximum CVs allowed for candidate.', 'wp-jobsearch'),
-                        'default' => '5',
-                    ),
-                    array(
-                        'id' => 'restrict_candidates',
-                        'type' => 'button_set',
-                        'title' => __('Restrict Candidate Detail', 'wp-jobsearch'),
-                        'subtitle' => __('Restrict Candidates detail page for all users except employers.', 'wp-jobsearch'),
-                        'desc' => '',
-                        'options' => array(
-                            'on' => __('On', 'wp-jobsearch'),
-                            'off' => __('Off', 'wp-jobsearch'),
-                        ),
-                        'default' => 'off',
-                    ),
-                    array(
-                        'id' => 'restrict_candidates_list',
-                        'type' => 'button_set',
-                        'title' => __('Restrict Candidates Listing', 'wp-jobsearch'),
-                        'subtitle' => __('Restrict Candidates Listing page for all users except employers.', 'wp-jobsearch'),
-                        'desc' => '',
-                        'options' => array(
-                            'on' => __('On', 'wp-jobsearch'),
-                            'off' => __('Off', 'wp-jobsearch'),
-                        ),
-                        'default' => 'off',
-                    ),
-                    array(
-                        'id' => 'restrict_cand_msg',
-                        'type' => 'textarea',
-                        'title' => __('Restrict page Message', 'wp-jobsearch'),
-                        'subtitle' => __('Message for restrict candidate page.', 'wp-jobsearch'),
-                        'desc' => '',
-                        'default' => __('THE PAGE IS RESTRICTED ONLY FOR SUBSCRIBED EMPLOYERS', 'wp-jobsearch'),
-                    ),
-                    array(
-                        'id' => 'restrict_candidates_for_users',
-                        'type' => 'button_set',
-                        'title' => __('Restrict for Employers', 'wp-jobsearch'),
-                        //'required' => array('restrict_candidates', 'equals', 'on'),
-                        'subtitle' => __('1. All registered employers can view candidates. <br> 2. Registered employers who purchased resume package can view candidates. <br> 3. Employer can view only their own applicants candidates.', 'wp-jobsearch'),
-                        'desc' => '',
-                        'options' => array(
-                            'register' => __('1. Register Employers', 'wp-jobsearch'),
-                            'register_resume' => __('2. Register Employers with package', 'wp-jobsearch'),
-                            'only_applicants' => __('3. Only Applicants', 'wp-jobsearch'),
-                        ),
-                        'default' => 'register',
-                    ),
-                    array(
-                        'id' => 'restrict_cv_packages',
-                        'type' => 'select',
-                        'multi' => true,
-                        'title' => __('Cv Packages', 'wp-jobsearch'),
-                        'required' => array(
-                            //array('restrict_candidates', 'equals', 'on'),
-                            array('restrict_candidates_for_users', 'equals', 'register_resume'),
-                        ),
-                        'subtitle' => '',
-                        'options' => $cv_pckgs,
-                        'default' => '',
-                        'desc' => __('Select Cv packages for employers.', 'wp-jobsearch'),
-                    ),
-                    array(
-                        'id' => 'candidate_restrict_img',
-                        'type' => 'media',
-                        'url' => true,
-                        'title' => __('Restriction Image', 'wp-jobsearch'),
-                        //'required' => array('restrict_candidates', 'equals', 'on'),
-                        'compiler' => 'true',
-                        'desc' => __('Candidate Restriction Image', 'wp-jobsearch'),
-                        'subtitle' => '',
-                        'default' => array('url' => jobsearch_plugin_get_url('images/restrict-candidate.png')),
-                    ),
-                    array(
-                        'id' => 'candidate_no_img',
-                        'type' => 'media',
-                        'url' => true,
-                        'title' => __('Candidate Image Placeholder', 'wp-jobsearch'),
-                        'compiler' => 'true',
-                        'desc' => '',
-                        'subtitle' => '',
-                        'default' => array('url' => jobsearch_plugin_get_url('images/no-image.jpg')),
-                    ),
-                    array(
-                        'id' => 'cand_det_contact_form',
-                        'type' => 'button_set',
-                        'title' => __('Candidate Detail Contact Form', 'wp-jobsearch'),
-                        'subtitle' => '',
-                        'desc' => __('Allow employer to contact candidates at Candidate detail page.', 'wp-jobsearch'),
-                        'options' => array(
-                            'on' => __('On', 'wp-jobsearch'),
-                            'off' => __('Off', 'wp-jobsearch'),
-                        ),
-                        'default' => 'on',
-                    ),
-                    array(
-                        'id' => 'clistin_map_marker_img',
-                        'type' => 'media',
-                        'url' => true,
-                        'title' => __('Candidates Map Marker Icon', 'wp-jobsearch'),
-                        'compiler' => 'true',
-                        'desc' => '',
-                        'subtitle' => '',
-                        'default' => array('url' => ''),
-                    ),
-                    array(
-                        'id' => 'clistin_map_cluster_img',
-                        'type' => 'media',
-                        'url' => true,
-                        'title' => __('Candidates Map Cluster Icon', 'wp-jobsearch'),
-                        'compiler' => 'true',
-                        'desc' => '',
-                        'subtitle' => '',
-                        'default' => array('url' => ''),
-                    ),
-                )),
+                'fields' => apply_filters('jobsearch_options_candidate_setings_fields', $candidate_arr),
             );
-            $this->sections[] = $section_settings;            
+            $this->sections[] = $section_settings;
 
             $section_settings = array(
                 'title' => __('Job Post Settings', 'wp-jobsearch'),
@@ -1440,6 +1457,62 @@ Your membership account is awaiting approval by the site administrator. You will
                         'desc' => __('Confirmation Tab Image', 'wp-jobsearch'),
                         'subtitle' => '',
                         'default' => array('url' => jobsearch_plugin_get_url('images/employer-confirmation-icon.png')),
+                    ),
+                ))
+            );
+            $this->sections[] = $section_settings;
+
+            $section_settings = array(
+                'title' => __('Search Filters Sorting', 'wp-jobsearch'),
+                'id' => 'search-filters-sorting',
+                'desc' => __('Search Filter Fields Sorting', 'wp-jobsearch'),
+                'icon' => 'el el-move',
+                'fields' => apply_filters('jobsearch_search_filters_sort_fields', array(
+                    array(
+                        'id' => 'jobs_srch_filtrs_sort',
+                        'type' => 'sorter',
+                        'title' => __('Jobs Filter Sort', 'wp-jobsearch'),
+                        'subtitle' => __('Jobs Search Filter Fields Sorting.', 'wp-jobsearch'),
+                        'desc' => __('Drag and drop to sort the fields.', 'wp-jobsearch'),
+                        'options' => array(
+                            'fields' => array(
+                                'location' => __('Location', 'wp-jobsearch'),
+                                'date_posted' => __('Date Posted', 'wp-jobsearch'),
+                                'job_type' => __('Job Type', 'wp-jobsearch'),
+                                'sector' => __('Sector', 'wp-jobsearch'),
+                                'custom_fields' => __('Custom Fields', 'wp-jobsearch'),
+                            ),
+                        ),
+                    ),
+                    array(
+                        'id' => 'emp_srch_filtrs_sort',
+                        'type' => 'sorter',
+                        'title' => __('Employers Filter Sort', 'wp-jobsearch'),
+                        'subtitle' => __('Employers Search Filter Fields Sorting.', 'wp-jobsearch'),
+                        'desc' => __('Drag and drop to sort the fields.', 'wp-jobsearch'),
+                        'options' => array(
+                            'fields' => array(
+                                'location' => __('Location', 'wp-jobsearch'),
+                                'date_posted' => __('Date Posted', 'wp-jobsearch'),
+                                'sector' => __('Sector', 'wp-jobsearch'),
+                                'team_size' => __('Team Size', 'wp-jobsearch'),
+                                'custom_fields' => __('Custom Fields', 'wp-jobsearch'),
+                            ),
+                        ),
+                    ),
+                    array(
+                        'id' => 'cand_srch_filtrs_sort',
+                        'type' => 'sorter',
+                        'title' => __('Candidates Filter Sort', 'wp-jobsearch'),
+                        'subtitle' => __('Candidates Search Filter Fields Sorting.', 'wp-jobsearch'),
+                        'desc' => __('Drag and drop to sort the fields.', 'wp-jobsearch'),
+                        'options' => array(
+                            'fields' => array(
+                                'date_posted' => __('Date Posted', 'wp-jobsearch'),
+                                'sector' => __('Sector', 'wp-jobsearch'),
+                                'custom_fields' => __('Custom Fields', 'wp-jobsearch'),
+                            ),
+                        ),
                     ),
                 ))
             );
